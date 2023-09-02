@@ -8,6 +8,7 @@
 - 이후, 각 Step 마다 해당 브랜치를 베이스로 하는 새로운 브랜치를 생성합니다.
   - 이 경우, 각 브랜치의 이름은 `feature/{대표 브랜치 이름}_step0` 과 같은 방식으로 생성합니다.
   - PR은 대표 브랜치 <- Step 브랜치로 진행합니다.
+- 필수적으로 PR Approve를 받아야 합니다. PR을 올리신 이후엔 리뷰어 지정 부탁드립니다. (@jyoo0515, @VSFe) 
 
 ## Git Convention
 
@@ -60,4 +61,7 @@ body
   - JavaScript
     - Airbnb: https://github.com/airbnb/javascript
     - Google: https://google.github.io/styleguide/jsguide.html
+  - ESLint, CheckStyle, EditorConfig 등의 툴을 활용하면 코드 스타일을 강제할 수 있습니다.
+- Webhook을 적극 검토해보세요. CI/CD 결과나, Test Coverage 분석 결과나, PR 요청 등의 작업들에 대해, Discord에 메시지가 올 수 있도록 Webhook을 적용해보면 좋을 겁니다.
+- 가능하면, 다른 분들의 PR도 코멘트를 달아보도록 노력해보세요. 상대방의 코드를 지적하는 것만이 코드 리뷰가 아닙니다. 코드를 보고 배울 점이 있다고 생각해도, 가감없이 코멘트를 달아주세요.
 
