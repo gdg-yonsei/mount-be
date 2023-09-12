@@ -1,6 +1,0 @@
-#### h2 (In-Memory)
-driver-class-name: com.mysql.cj.jdbc.Driver
-url: jdbc:mysql://127.0.0.1:3306/mountstorage
-username: root
-password: tpfls0404
-upload.path: /Users/serinryu/Desktop/files/
