@@ -1,0 +1,2 @@
+DevelopmentDatabaseURL : "sqlite:///./filesystem.db"
+ProductionDatabaseURL : "mysql://user:password@localhost/dbname"
