@@ -12,10 +12,10 @@ public class FileUploadResponse {
     private String originalFileName;
     private String storeFileName;
 
-    public static FileUploadResponse fromEntity(File fileEntity){
+    public static FileUploadResponse fromEntity(File file){
         return FileUploadResponse.builder()
-            .originalFileName(fileEntity.getOriginalFileName())
-            .storeFileName(fileEntity.getStoreFileName())
+            .originalFileName(file.getOriginalFileName())
+            .storeFileName(file.getStoreFileName())
             .build();
     }
 }

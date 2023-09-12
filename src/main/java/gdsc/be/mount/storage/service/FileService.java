@@ -7,4 +7,5 @@ import java.io.IOException;
 
 public interface FileService {
     public FileUploadResponse uploadFile(MultipartFile file, String userName) throws IOException;
+    public Long deleteFile(Long fileId) throws IOException;
 }
