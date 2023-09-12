@@ -2,6 +2,10 @@
 
 - 프로젝트 설명은 대화방 내 pdf 파일을 참고 바랍니다.
 
+# Info
+- FastAPI
+- Blog: 
+
 ## Branch Guide
 
 - gdsc-ys org에 존재하는 레포에 본인의 대표 브랜치를 생성합니다.
