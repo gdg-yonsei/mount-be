@@ -1,6 +1,7 @@
 package com.gdsc.mount.metadata.controller;
 
 
+import com.gdsc.mount.common.exception.ErrorResponse;
 import com.gdsc.mount.metadata.dto.MetadataResponse;
 import com.gdsc.mount.metadata.service.MetadataService;
 import lombok.RequiredArgsConstructor;
@@ -10,9 +11,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Controller
 @RequestMapping("/api/file")
@@ -66,4 +70,33 @@ public class MetadataController {
         String body = success ? "success" : "fail";
         return ResponseEntity.status(204).body(body);
     }
+
+    @ExceptionHandler(NoSuchElementException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ResponseEntity<ErrorResponse> handleNoSuchElementFoundException(
+            NoSuchElementException exception, WebRequest request
+    ) {
+        ErrorResponse response = ErrorResponse.of(
+                exception,
+                "No such element exists.",
+                HttpStatus.NOT_FOUND,
+                request
+        );
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    @ExceptionHandler(IOException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ResponseEntity<ErrorResponse> handleIOException(
+            IOException exception
+    ) {
+        ErrorResponse response = ErrorResponse.of(
+                exception,
+                exception.getMessage(),
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                null
+        );
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+
 }
