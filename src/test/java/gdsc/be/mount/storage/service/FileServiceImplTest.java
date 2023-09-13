@@ -12,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -53,8 +54,11 @@ public class FileServiceImplTest {
     public File createFileEntity(){
         return File.builder()
                 .originalFileName("test.txt")
-                .storeFileName("Test data")
+                .storeFileName("RANDOMRANDOM")
+                .filePath("/file/path")
+                .fileSize(300L)
                 .fileType("text/plain")
+                .uploadTime(LocalDateTime.of(2023, 9, 3, 2, 1))
                 .userName("testUser")
                 .build();
     }

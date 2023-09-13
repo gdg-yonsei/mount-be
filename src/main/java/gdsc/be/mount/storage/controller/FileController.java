@@ -4,7 +4,6 @@ import gdsc.be.mount.global.common.response.SuccessResponse;
 import gdsc.be.mount.storage.dto.response.FileDownloadResponse;
 import gdsc.be.mount.storage.dto.response.FileUploadResponse;
 import gdsc.be.mount.storage.service.FileService;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.UrlResource;
@@ -28,7 +27,6 @@ public class FileController {
 
     /**
      * 파일 업로드
-     * @param request
      * @param userName
      * @param file
      * @return
