@@ -1,4 +1,4 @@
-package com.gdsc.mount.fileInfo.dto;
+package com.gdsc.mount.metadata.dto;
 
 import lombok.Getter;
 
