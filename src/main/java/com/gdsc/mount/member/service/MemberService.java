@@ -13,11 +13,14 @@ import java.util.NoSuchElementException;
 public class MemberService {
     private final MemberRepository memberRepository;
 
-    public String createMember(String username) {
+    public MemberResponse createMember(String username) {
+        if (memberRepository.existsByUsername(username)) {
+            throw new IllegalArgumentException("Username already exists.");
+        }
         memberRepository.save(new Member(username));
-        return memberRepository.findByUsername(username)
-                .orElseThrow(() -> new NoSuchElementException("No member exists with given username."))
-                .get_id();
+        return MemberResponse.builder()
+                .username(username)
+                .build();
     }
 
     public MemberResponse findMemberById(String id) {
