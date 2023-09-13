@@ -22,7 +22,4 @@ public class Member {
         this.username = username;
     }
 
-    public void updateUsername(String username) {
-        this.username = username;
-    }
 }

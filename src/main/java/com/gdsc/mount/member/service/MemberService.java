@@ -31,10 +31,4 @@ public class MemberService {
                 .orElseThrow(() -> new NoSuchElementException("No member exists with given id."));
         memberRepository.deleteById(id);
     }
-
-    public void updateMemberById(String id, String username) {
-        Member member = memberRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("No member exists with given id."));
-        member.updateUsername(username);
-    }
 }
