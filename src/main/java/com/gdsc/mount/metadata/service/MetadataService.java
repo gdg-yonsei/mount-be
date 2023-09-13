@@ -58,7 +58,7 @@ public class MetadataService {
         try (InputStream inputStream = file.getInputStream()) {
             Path filePath = uploadPath.resolve(fileCode + "-" + fileName);
             Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
-            metadataRepository.save(new Metadata(fileCode, fileName, username, file.getContentType(), file.getSize(), "/download/" + fileCode));
+            metadataRepository.save(new Metadata(fileCode, fileName, username, file.getContentType(), file.getSize()));
         } catch (IOException e) {
             throw new IOException("Failed to save file: " + fileName);
         }
