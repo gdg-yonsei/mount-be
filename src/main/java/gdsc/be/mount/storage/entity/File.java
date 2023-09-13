@@ -29,4 +29,5 @@ public class File {
     private String fileType;
     private LocalDateTime uploadTime;
     private String userName; // 사용자
+
 }

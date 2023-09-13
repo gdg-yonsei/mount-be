@@ -14,6 +14,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@DisplayName("Repository 테스트 (JPA CRUD)")
 public class FileRepositoryTest {
     @Autowired
     private FileRepository fileRepository;

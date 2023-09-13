@@ -29,7 +29,7 @@
 
 ### Service 테스트
 * File upload 테스트
-* File delete 테스트
+* File delete 테스트 (TODO)
 * File download 테스트
 
 
