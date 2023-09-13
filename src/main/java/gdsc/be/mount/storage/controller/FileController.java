@@ -1,11 +1,14 @@
 package gdsc.be.mount.storage.controller;
 
 import gdsc.be.mount.global.common.response.SuccessResponse;
+import gdsc.be.mount.storage.dto.response.FileDownloadResponse;
 import gdsc.be.mount.storage.dto.response.FileUploadResponse;
 import gdsc.be.mount.storage.service.FileService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 
 @RestController
 @RequiredArgsConstructor
@@ -56,6 +60,24 @@ public class FileController {
         return ResponseEntity
             .status(HttpStatus.OK)
             .body(SuccessResponse.of(deletedFileId));
+    }
+
+    /**
+     * 파일 다운로드 기능
+     * @param fileId
+     * @param userName
+     * @return
+     * @throws MalformedURLException
+     */
+    @GetMapping(value = "/download/{fileId}/{userName}")
+    public ResponseEntity<UrlResource> downloadFile(@PathVariable Long fileId, @PathVariable String userName) throws MalformedURLException {
+
+        FileDownloadResponse content = fileService.downloadFile(fileId, userName);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .header(HttpHeaders.CONTENT_DISPOSITION, content.getContentDisposition())
+                .body(content.getUrlResource());
     }
 
 }

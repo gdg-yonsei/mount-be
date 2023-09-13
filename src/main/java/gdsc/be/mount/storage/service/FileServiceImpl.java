@@ -1,18 +1,24 @@
 package gdsc.be.mount.storage.service;
 
 import gdsc.be.mount.storage.dto.request.FileUploadRequest;
+import gdsc.be.mount.storage.dto.response.FileDownloadResponse;
 import gdsc.be.mount.storage.dto.response.FileUploadResponse;
 import gdsc.be.mount.storage.entity.File;
+import gdsc.be.mount.storage.exception.FileDownloadNotAllowedException;
 import gdsc.be.mount.storage.exception.FileNotFoundException;
 import gdsc.be.mount.storage.repository.FileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.util.UriUtils;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -32,7 +38,7 @@ public class FileServiceImpl implements FileService{
     @Override
     public FileUploadResponse uploadFile(MultipartFile file, String userName) throws IOException {
         if(file.isEmpty()){
-            return null;
+            throw new IllegalArgumentException("업로드할 파일이 비어 있습니다.");
         }
 
         String originalFileName = file.getOriginalFilename(); // 사용자가 등록한 최초 파일명
@@ -62,7 +68,6 @@ public class FileServiceImpl implements FileService{
     @Override
     public Long deleteFile(Long fileId) throws IOException {
         // 삭제할 파일 확인
-        System.out.println(fileId);
         File file = fileRepository.findById(fileId)
                 .orElseThrow(() -> new FileNotFoundException("File not found"));
 
@@ -74,6 +79,31 @@ public class FileServiceImpl implements FileService{
         Files.delete(fileToDelete);
 
         return file.getId();
+    }
+
+    @Override
+    public FileDownloadResponse downloadFile(Long fileId, String userName) throws MalformedURLException {
+        // 다운로드 요청이 들어온 파일 확인 후, 해당 파일 없으면 예외
+        File file = fileRepository.findById(fileId)
+                .orElseThrow(() -> new FileNotFoundException("File not found"));
+
+        // 본인이 만든 파일인지 확인 후, 아니라면 예외
+        if(!userName.equals(file.getUserName())){
+            throw new FileDownloadNotAllowedException("You are not allowed to download this file");
+        }
+
+        String originalFileName = file.getOriginalFileName();
+        String saveFileName = file.getStoreFileName();
+        log.info("saveFileName = {}", saveFileName);
+
+        UrlResource resource = new UrlResource("file:" + getFullPath(saveFileName));
+        log.info("URL Resource = {}", resource);
+
+        // 다운로드 시 가독성 위해 최초 파일명 사용
+        String encodedOriginalFileName = UriUtils.encode(originalFileName, StandardCharsets.UTF_8);
+        String contentDisposition = "attachment; filename=\"" + encodedOriginalFileName + "\"";
+
+        return new FileDownloadResponse(resource, contentDisposition);
     }
 
 

@@ -37,6 +37,14 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
+    // FileDownloadNotAllowedException 에 대한 예외처리
+    @ExceptionHandler
+    protected ResponseEntity<?> handleFileDownloadNotAllowedException(FileDownloadNotAllowedException e) {
+        log.error("FileDownloadNotAllowedException Occured: {}", e.getMessage());
+        final ErrorResponse<String> response = ErrorResponse.of(e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
+    }
+
     // 기타 예외 처리
     @ExceptionHandler(Exception.class)
     protected ResponseEntity<?> handleException(Exception e) {
