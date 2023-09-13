@@ -1,7 +1,6 @@
 package com.gdsc.mount.metadata.dto;
 
 import com.gdsc.mount.metadata.domain.Metadata;
-import com.gdsc.mount.common.dto.BaseResponse;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -9,7 +8,7 @@ import java.time.Instant;
 
 @Getter
 @Builder
-public class MetadataResponse extends BaseResponse {
+public class MetadataResponse {
     private String _id;
     private String fileName;
     private String username;
