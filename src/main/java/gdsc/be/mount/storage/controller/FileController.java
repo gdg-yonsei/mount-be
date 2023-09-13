@@ -35,9 +35,8 @@ public class FileController {
      * @throws IOException
      */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<SuccessResponse<FileUploadResponse>> uploadFile(HttpServletRequest request,
-                                                                         @RequestParam("user") String userName,
-                                                                         @RequestParam("file") MultipartFile file) throws IOException {
+    public ResponseEntity<SuccessResponse<FileUploadResponse>> uploadFile(@RequestParam("user") String userName,
+                                                                         @RequestParam("file") MultipartFile file) {
         log.info("File = {}", file);
         FileUploadResponse data = fileService.uploadFile(file, userName);
 
@@ -53,7 +52,7 @@ public class FileController {
      * @throws IOException
      */
     @DeleteMapping(value = "/{fileId}")
-    public ResponseEntity<SuccessResponse<Long>> deleteFile(@PathVariable Long fileId) throws IOException {
+    public ResponseEntity<SuccessResponse<Long>> deleteFile(@PathVariable Long fileId) {
 
         Long deletedFileId = fileService.deleteFile(fileId);
 
@@ -70,7 +69,7 @@ public class FileController {
      * @throws MalformedURLException
      */
     @GetMapping(value = "/download/{fileId}/{userName}")
-    public ResponseEntity<UrlResource> downloadFile(@PathVariable Long fileId, @PathVariable String userName) throws MalformedURLException {
+    public ResponseEntity<UrlResource> downloadFile(@PathVariable Long fileId, @PathVariable String userName) {
 
         FileDownloadResponse content = fileService.downloadFile(fileId, userName);
 
