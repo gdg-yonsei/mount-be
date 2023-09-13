@@ -30,6 +30,9 @@ public class Metadata {
     @Field(name = "size_in_bytes")
     private Long sizeInBytes;
 
+    @Field(name = "download_uri")
+    private String downloadUri;
+
     @CreatedDate
     private Instant createdAt;
 
@@ -38,11 +41,12 @@ public class Metadata {
 
     protected Metadata() {}
 
-    public Metadata(String fileId, String fileName, String username, String contentType, Long sizeInBytes) {
+    public Metadata(String fileId, String fileName, String username, String contentType, Long sizeInBytes, String downloadUri) {
         this._id = fileId;
         this.fileName = fileName;
         this.username = username;
         this.contentType = contentType;
         this.sizeInBytes = sizeInBytes;
+        this.downloadUri = downloadUri;
     }
 }
