@@ -1,16 +1,14 @@
 package com.gdsc.mount.metadata.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 @Getter
+@AllArgsConstructor
 public class CreateMetadataRequest  {
     private String fileName;
     private String username;
 
-    protected CreateMetadataRequest() {};
-
-    public CreateMetadataRequest(String fileName, String username) {
-        this.fileName = fileName;
-        this.username = username;
-    }
+    protected CreateMetadataRequest() {}
 }
