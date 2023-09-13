@@ -1,7 +1,6 @@
 package com.gdsc.mount.metadata.controller;
 
 
-import com.gdsc.mount.metadata.domain.Metadata;
 import com.gdsc.mount.metadata.dto.MetadataResponse;
 import com.gdsc.mount.metadata.service.MetadataService;
 import lombok.RequiredArgsConstructor;
@@ -24,8 +23,8 @@ public class MetadataController {
     // get file
     @GetMapping("/{fileId}")
     public ResponseEntity<MetadataResponse> findFileById(@PathVariable String fileId) {
-        Metadata metadata = metadataService.getMetadatabyId(fileId);
-        return ResponseEntity.status(200).body(MetadataResponse.of(metadata));
+        MetadataResponse response = MetadataResponse.of(metadataService.getMetadatabyId(fileId));
+        return ResponseEntity.status(200).body(response);
     }
 
     // get all
