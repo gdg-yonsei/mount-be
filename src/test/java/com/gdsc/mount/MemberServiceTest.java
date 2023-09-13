@@ -1,4 +1,4 @@
-package com.gdsc.mount.service;
+package com.gdsc.mount;
 
 import com.gdsc.mount.member.domain.Member;
 import com.gdsc.mount.member.repository.MemberRepository;
