@@ -38,7 +38,7 @@ public class MetadataService {
         PageRequest pr = PageRequest.of(page, size);
         Page<Metadata> fileInfos = metadataRepository.findAll(pr);
         if (fileInfos.getNumberOfElements() == 0) {
-            return null;
+            fileInfos = Page.empty();
         }
         return fileInfos.stream()
                 .map(MetadataResponse::of)
