@@ -30,8 +30,7 @@ public class MemberService {
     }
 
     public void deleteMemberById(String id) {
-        memberRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("No member exists with given id."));
+        findMemberById(id);
         memberRepository.deleteById(id);
     }
 }
