@@ -28,7 +28,7 @@ async def upload_file(file: UploadFile, user_id: str, db: Session = Depends(get_
         user_id = user_id
     )
     
-    save_file(user_file, user_id, content, db=db)   
+    save_file(user_file, content, db=db)   
 
 @fileController.delete('/{file_name}')
 async def delete_file(file_name: str, user_id:str, db: Session = Depends(get_db)):
@@ -50,7 +50,7 @@ async def download_file(file_name:str, user_id:str, db: Session = Depends(get_db
     if not has_file(file_name, user_id, db=db):
         raise HTTPException(status_code=404, detail="file doesn't exist")
     
-    if not can_access(file_name, user_id, db=db):
+    allowed_file = get_file(file_name, user_id, db=db)
+    if allowed_file is None:
         raise HTTPException(status_code=403, detail="permission denied")
-    
-    return get_file(file_name, user_id, db=db)
+    return allowed_file
