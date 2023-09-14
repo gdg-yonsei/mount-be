@@ -21,13 +21,13 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Service 테스트")
-public class FileServiceImplTest {
+public class FileServiceTest {
 
     @Mock
     private FileRepository fileRepository;
 
     @InjectMocks
-    private FileServiceImpl fileService;
+    private FileService fileService;
 
 
     // ================ 이후 테스트 고도화 작업 필요
@@ -55,7 +55,7 @@ public class FileServiceImplTest {
 
         // Then
         assertNotNull(response);
-        assertEquals(originalFileName, response.getOriginalFileName());
+        assertEquals(originalFileName, response.originalFileName());
 
         verify(fileRepository, times(1)).save(any());
     }
@@ -82,11 +82,11 @@ public class FileServiceImplTest {
 
         // Then
         assertNotNull(response);
-        assertNotNull(response.getUrlResource());
-        assertNotNull(response.getContentDisposition());
+        assertNotNull(response.urlResource());
+        assertNotNull(response.contentDisposition());
 
-        assertTrue(response.getUrlResource() instanceof UrlResource);
-        assertTrue(response.getContentDisposition().contains(file.getOriginalFileName()));
+        assertTrue(response.urlResource() instanceof UrlResource);
+        assertTrue(response.contentDisposition().contains(file.getOriginalFileName()));
     }
 
     public File createFileEntity(){
