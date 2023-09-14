@@ -33,12 +33,10 @@ public class FileController {
      * @param userName
      * @param file
      * @return
-     * @throws IOException
      */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<SuccessResponse<FileUploadResponse>> uploadFile(@RequestParam("user") @NotBlank String userName,
                                                                          @RequestParam("file") MultipartFile file) {
-        log.info("File = {}", file);
         FileUploadResponse data = fileService.uploadFile(file, userName);
 
         return ResponseEntity
@@ -49,8 +47,8 @@ public class FileController {
     /**
      * 파일 삭제 기능
      * @param fileId
+     * @param userName
      * @return
-     * @throws IOException
      */
     @DeleteMapping(value = "/{fileId}/{userName}")
     public ResponseEntity<SuccessResponse<Long>> deleteFile(@PathVariable Long fileId, @PathVariable String userName) {
@@ -67,7 +65,6 @@ public class FileController {
      * @param fileId
      * @param userName
      * @return
-     * @throws MalformedURLException
      */
     @GetMapping(value = "/download/{fileId}/{userName}")
     public ResponseEntity<UrlResource> downloadFile(@PathVariable Long fileId, @PathVariable String userName) {

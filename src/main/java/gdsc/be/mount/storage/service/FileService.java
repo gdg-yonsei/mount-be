@@ -42,6 +42,8 @@ public class FileService {
             String originalFileName = file.getOriginalFilename(); // 사용자가 등록한 최초 파일명
             String storeFileName = createStoreFileName(originalFileName); // 서버 내부에서 관리할 파일명
 
+            log.debug("[uploadFile] originalFileName: {}, storeFileName: {}", originalFileName, storeFileName);
+
             // 1. 파일 시스템에서 물리적 파일 저장
             String filePath = getFullPath(storeFileName);
             savePhysicalFile(file, filePath);
@@ -59,6 +61,8 @@ public class FileService {
         try {
             // 파일 확인 및 권한 검사
             File file = getFileForDeletion(fileId, userName);
+
+            log.debug("[deleteFile] FileName: {}", file.getOriginalFileName());
 
             // 1. DB 에서 파일 메타데이터 삭제
             deleteFileMetadata(fileId);
@@ -82,7 +86,7 @@ public class FileService {
 
             UrlResource resource = getResource(saveFileName);
 
-            log.debug("[downloadFile] saveFileName: {}, URL Resource: {}, saveFileName, resource");
+            log.debug("[downloadFile] saveFileName: {}, URL Resource: {}", saveFileName, resource);
 
             // 다운로드 시 가독성 위해 최초 파일명 사용
             String encodedOriginalFileName = UriUtils.encode(originalFileName, StandardCharsets.UTF_8);
