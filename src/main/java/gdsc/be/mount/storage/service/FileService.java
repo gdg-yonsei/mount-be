@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriUtils;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -34,16 +35,16 @@ public class FileService {
     private String fileDir;
 
     public FileUploadResponse uploadFile(MultipartFile file, String userName) {
+        if (file.isEmpty()) {
+            throw FileEmptyException.EXCEPTION;
+        }
+
+        String originalFileName = file.getOriginalFilename(); // 사용자가 등록한 최초 파일명
+        String storeFileName = createStoreFileName(originalFileName); // 서버 내부에서 관리할 파일명
+
+        log.debug("[uploadFile] originalFileName: {}, storeFileName: {}", originalFileName, storeFileName);
+
         try {
-            if (file.isEmpty()) {
-                throw FileEmptyException.EXCEPTION;
-            }
-
-            String originalFileName = file.getOriginalFilename(); // 사용자가 등록한 최초 파일명
-            String storeFileName = createStoreFileName(originalFileName); // 서버 내부에서 관리할 파일명
-
-            log.debug("[uploadFile] originalFileName: {}, storeFileName: {}", originalFileName, storeFileName);
-
             // 1. 파일 시스템에서 물리적 파일 저장
             String filePath = getFullPath(storeFileName);
             savePhysicalFile(file, filePath);
@@ -58,12 +59,12 @@ public class FileService {
     }
 
     public Long deleteFile(Long fileId, String userName) {
+        // 파일 확인 및 권한 검사
+        File file = getFileForDeletion(fileId, userName);
+
+        log.debug("[deleteFile] FileName: {}", file.getOriginalFileName());
+
         try {
-            // 파일 확인 및 권한 검사
-            File file = getFileForDeletion(fileId, userName);
-
-            log.debug("[deleteFile] FileName: {}", file.getOriginalFileName());
-
             // 1. DB 에서 파일 메타데이터 삭제
             deleteFileMetadata(fileId);
 
@@ -93,6 +94,9 @@ public class FileService {
             String contentDisposition = "attachment; filename=\"" + encodedOriginalFileName + "\"";
 
             return new FileDownloadResponse(resource, contentDisposition);
+        } catch (MalformedURLException ex) {
+            // URL 생성 오류
+            throw FileDownloadExpcetion.EXCEPTION;
         } catch (IOException ex) {
             throw FileDownloadExpcetion.EXCEPTION;
         }
