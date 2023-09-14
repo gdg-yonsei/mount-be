@@ -44,7 +44,7 @@ public class FileService {
 
             // 1. 파일 시스템에서 물리적 파일 저장
             String filePath = getFullPath(storeFileName);
-            saveFileToDisk(file, filePath);
+            savePhysicalFile(file, filePath);
 
             // 2. DB 에 파일 메타데이터 저장
             File savedFile = saveFileMetadataToDB(originalFileName, storeFileName, filePath, file.getSize(), file.getContentType(), userName);
@@ -74,7 +74,6 @@ public class FileService {
 
     public FileDownloadResponse downloadFile(Long fileId, String userName) {
         try {
-
             // 파일 확인 및 권한 검사
             File file = getFileForDownload(fileId, userName);
 
@@ -95,14 +94,19 @@ public class FileService {
         }
     }
 
+    // ====================================================================================================
 
-    // 동일한 이름 충돌 방지를 위해 random 값으로 서버 내부 관리용 파일명 제작
+    /*
+    파일 저장 관련 메서드
+     */
+
     private String createStoreFileName(String originalFileName){
+        // 동일한 이름 충돌 방지를 위해 random 값으로 서버 내부 관리용 파일명 제작
         return UUID.randomUUID().toString() + "." + extractExt(originalFileName);
     }
 
-    // 확장자 별도 추출
     private String extractExt(String originalFilename) {
+        // 확장자 별도 추출
         int pos = originalFilename.lastIndexOf(".");
         return originalFilename.substring(pos + 1);
     }
@@ -111,7 +115,7 @@ public class FileService {
         return fileDir + filename;
     }
 
-    private void saveFileToDisk(MultipartFile file, String filePath) throws IOException {
+    private void savePhysicalFile(MultipartFile file, String filePath) throws IOException {
         file.transferTo(Files.createFile(Path.of(filePath)));
     }
 
@@ -130,23 +134,9 @@ public class FileService {
         return fileRepository.save(fileUploadRequest.toEntity());
     }
 
-    private File getFileFromDatabase(Long fileId) {
-        return fileRepository.findById(fileId)
-                .orElseThrow(() -> FileNotFoundException.EXCEPTION);
-    }
-
-
-    private File getFileForDeletion(Long fileId, String userName) {
-        // DB 에서 해당 파일 메타데이터가 없으면 예외
-        File file = getFileFromDatabase(fileId);
-
-        // 본인이 만든 파일인지 확인 후, 아니라면 예외
-        if (!userName.equals(file.getUserName())) {
-            throw FileDeleteNotAllowedException.EXCEPTION;
-        }
-
-        return file;
-    }
+    /*
+    파일 삭제 관련 메서드
+     */
 
     private void deleteFileMetadata(Long fileId) {
         fileRepository.deleteById(fileId);
@@ -157,18 +147,9 @@ public class FileService {
         Files.delete(fileToDelete);
     }
 
-    private File getFileForDownload(Long fileId, String userName) {
-        // DB 에서 해당 파일 메타데이터가 없으면 예외
-        File file = getFileFromDatabase(fileId);
-
-        // 본인이 만든 파일인지 확인 후, 아니라면 예외
-        if (!userName.equals(file.getUserName())) {
-            throw FileDownloadNotAllowedException.EXCEPTION;
-        }
-
-        return file;
-    }
-
+    /*
+    파일 다운로드 관련 메서드
+     */
 
     private UrlResource getResource(String saveFileName) throws IOException {
         Path filePath = Path.of(getFullPath(saveFileName));
@@ -180,6 +161,39 @@ public class FileService {
         }
 
         return resource;
+    }
+
+    /*
+     파일 확인 및 권한 검사 관련 메서드
+     */
+
+    private File getFileFromDatabase(Long fileId) {
+        return fileRepository.findById(fileId)
+                .orElseThrow(() -> FileNotFoundException.EXCEPTION);
+    }
+
+    private File getFileWithOwnershipCheck(Long fileId, String userName, boolean isForDownload) {
+        // DB에서 해당 파일 메타데이터를 가져옴
+        File file = getFileFromDatabase(fileId);
+
+        // 본인이 만든 파일인지 확인 후, 아니라면 예외를 던짐
+        if (!userName.equals(file.getUserName())) {
+            if (isForDownload) {
+                throw FileDownloadNotAllowedException.EXCEPTION;
+            } else {
+                throw FileDeleteNotAllowedException.EXCEPTION;
+            }
+        }
+
+        return file;
+    }
+
+    private File getFileForDeletion(Long fileId, String userName) {
+        return getFileWithOwnershipCheck(fileId, userName, false);
+    }
+
+    private File getFileForDownload(Long fileId, String userName) {
+        return getFileWithOwnershipCheck(fileId, userName, true);
     }
 
 }
