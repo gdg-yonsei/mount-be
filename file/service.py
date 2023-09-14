@@ -35,5 +35,6 @@ def get_file(file_name:str, user_id:str, db:Session):
     target = get_metadata(file_name, user_id, db)
     if not(target.user_id == user_id or File.access != 0):
         return None
+    
     pysical_file_path = target.server_filename
     return FileResponse(pysical_file_path, filename=target.file_name)

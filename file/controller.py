@@ -15,7 +15,8 @@ async def upload_file(file: UploadFile, user_id: str, db: Session = Depends(get_
     로컬에 파일 저장, 메타데이터 db에 저장
     '''
     file_name = file.filename
-    server_filename = UPLOAD_DIR + uuid.uuid4().hex + '.' + file_name.split('.')[1]
+    file_extension = file_name.split('.')[-1] if '.' in file_name else ""
+    server_filename = UPLOAD_DIR + uuid.uuid4().hex + '.' + file_extension
     content = await file.read()
     
     if has_file(file_name, user_id, db=db):
