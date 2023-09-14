@@ -42,23 +42,12 @@ public class FileService {
             String originalFileName = file.getOriginalFilename(); // 사용자가 등록한 최초 파일명
             String storeFileName = createStoreFileName(originalFileName); // 서버 내부에서 관리할 파일명
 
-            // 파일 시스템에 파일 저장
+            // 1. 파일 시스템에서 물리적 파일 저장
             String filePath = getFullPath(storeFileName);
-            file.transferTo(Files.createFile(Path.of(filePath)));
+            saveFileToDisk(file, filePath);
 
-            // DB 에 파일 메타데이터 저장
-            FileUploadRequest fileUploadRequest =
-                    FileUploadRequest.builder()
-                            .originalFileName(originalFileName)
-                            .storeFileName(storeFileName)
-                            .filePath(filePath)
-                            .fileSize(file.getSize())
-                            .fileType(file.getContentType())
-                            .uploadTime(LocalDateTime.now())
-                            .userName(userName)
-                            .build();
-
-            File savedFile = fileRepository.save(fileUploadRequest.toEntity());
+            // 2. DB 에 파일 메타데이터 저장
+            File savedFile = saveFileMetadataToDB(originalFileName, storeFileName, filePath, file.getSize(), file.getContentType(), userName);
 
             return FileUploadResponse.fromEntity(savedFile);
         } catch (IOException ex) {
@@ -72,12 +61,11 @@ public class FileService {
             File file = fileRepository.findById(fileId)
                     .orElseThrow(() -> FileNotFoundException.EXCEPTION);
 
-            // DB 에서 파일 메타데이터 삭제
-            fileRepository.deleteById(fileId);
+            // 1. DB 에서 파일 메타데이터 삭제
+            deleteFileMetadata(fileId);
 
-            // 파일 시스템에서 파일 삭제
-            Path fileToDelete = Path.of(file.getFilePath());
-            Files.delete(fileToDelete);
+            // 2. 파일 시스템에서 물리적 파일 삭제
+            deletePhysicalFile(file.getFilePath());
 
             return file.getId();
         } catch (IOException ex) {
@@ -87,19 +75,14 @@ public class FileService {
 
     public FileDownloadResponse downloadFile(Long fileId, String userName) {
         try {
-            // 다운로드 요청이 들어온 파일 확인 후, 해당 파일 없으면 예외
-            File file = fileRepository.findById(fileId)
-                    .orElseThrow(() -> FileNotFoundException.EXCEPTION);
 
-            // 본인이 만든 파일인지 확인 후, 아니라면 예외
-            if (!userName.equals(file.getUserName())) {
-                throw FileDownloadNotAllowedException.EXCEPTION;
-            }
+            // 파일 확인 및 권한 검사
+            File file = getFileForDownload(fileId, userName);
 
             String originalFileName = file.getOriginalFileName();
             String saveFileName = file.getStoreFileName();
 
-            UrlResource resource = new UrlResource("file:" + getFullPath(saveFileName));
+            UrlResource resource = getResource(saveFileName);
 
             log.debug("Saved File Name = {} / URL Resource = {}", saveFileName, resource);
 
@@ -128,4 +111,59 @@ public class FileService {
     private String getFullPath(String filename) {
         return fileDir + filename;
     }
+
+    private void saveFileToDisk(MultipartFile file, String filePath) throws IOException {
+        file.transferTo(Files.createFile(Path.of(filePath)));
+    }
+
+    private File saveFileMetadataToDB(String originalFileName, String storeFileName, String filePath, long fileSize, String fileType, String userName) {
+        FileUploadRequest fileUploadRequest =
+                FileUploadRequest.builder()
+                        .originalFileName(originalFileName)
+                        .storeFileName(storeFileName)
+                        .filePath(filePath)
+                        .fileSize(fileSize)
+                        .fileType(fileType)
+                        .uploadTime(LocalDateTime.now())
+                        .userName(userName)
+                        .build();
+
+        return fileRepository.save(fileUploadRequest.toEntity());
+    }
+
+    private void deleteFileMetadata(Long fileId) {
+        fileRepository.deleteById(fileId);
+    }
+
+    private void deletePhysicalFile(String filePath) throws IOException {
+        Path fileToDelete = Path.of(filePath);
+        Files.delete(fileToDelete);
+    }
+
+    private File getFileForDownload(Long fileId, String userName) {
+        // DB 에서 해당 파일 메타데이터가 없으면 예외
+        File file = fileRepository.findById(fileId)
+                .orElseThrow(() -> FileNotFoundException.EXCEPTION);
+
+        // 본인이 만든 파일인지 확인 후, 아니라면 예외
+        if (!userName.equals(file.getUserName())) {
+            throw FileDownloadNotAllowedException.EXCEPTION;
+        }
+
+        return file;
+    }
+
+
+    private UrlResource getResource(String saveFileName) throws IOException {
+        Path filePath = Path.of(getFullPath(saveFileName));
+        UrlResource resource = new UrlResource(filePath.toUri());
+
+        // 물리적인 파일이 존재하지 않으면 예외
+        if (!resource.exists()) {
+            throw FileNotFoundException.EXCEPTION;
+        }
+
+        return resource;
+    }
+
 }
