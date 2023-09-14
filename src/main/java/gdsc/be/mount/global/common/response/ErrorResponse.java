@@ -1,18 +1,32 @@
 package gdsc.be.mount.global.common.response;
 
+import gdsc.be.mount.global.common.Enum.ErrorCode;
 import lombok.Getter;
 
+/*
+ * ErrorResponse
+ *
+ * {
+ *    "success": false,     // API 호출 실패
+ *    "code": "F001",       // 내부 ErrorCode
+ *    "message": null,      // 내부 ErrorCode에 대한 메시지
+ * }
+ *
+ */
+
 @Getter
-public class ErrorResponse<T> extends CommonResponse{
+public class ErrorResponse extends CommonResponse{
 
-    private final T error;
+    private final String code;
+    private final String message;
 
-    private ErrorResponse(T error){
+    private ErrorResponse(ErrorCode code){
         super(false);
-        this.error = error;
+        this.code = code.getCode();
+        this.message = code.getMessage();
     }
 
-    public static <T> ErrorResponse<T> of(T error) {
-        return new ErrorResponse<>(error);
+    public static ErrorResponse of(final ErrorCode code) {
+        return new ErrorResponse(code);
     }
 }

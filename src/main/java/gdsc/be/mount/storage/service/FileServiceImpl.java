@@ -4,9 +4,7 @@ import gdsc.be.mount.storage.dto.request.FileUploadRequest;
 import gdsc.be.mount.storage.dto.response.FileDownloadResponse;
 import gdsc.be.mount.storage.dto.response.FileUploadResponse;
 import gdsc.be.mount.storage.entity.File;
-import gdsc.be.mount.storage.exception.FileDownloadNotAllowedException;
-import gdsc.be.mount.storage.exception.FileNotFoundException;
-import gdsc.be.mount.storage.exception.FileStorageExeption;
+import gdsc.be.mount.storage.exception.*;
 import gdsc.be.mount.storage.repository.FileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,7 +45,7 @@ public class FileServiceImpl implements FileService{
 
             // 파일 시스템에 파일 저장
             String filePath = getFullPath(storeFileName);
-            file.transferTo(new java.io.File(filePath));
+            file.transferTo(Files.createFile(Path.of(filePath)));
 
             // DB 에 파일 메타데이터 저장
             FileUploadRequest fileUploadRequest =
@@ -65,7 +63,7 @@ public class FileServiceImpl implements FileService{
 
             return FileUploadResponse.fromEntity(savedFile);
         } catch (IOException ex) {
-            throw new FileStorageExeption("파일 업로드 중 오류가 발생했습니다.", ex);
+            throw FileUploadException.EXCEPTION;
         }
     }
 
@@ -74,7 +72,7 @@ public class FileServiceImpl implements FileService{
         try {
             // 삭제할 파일 확인
             File file = fileRepository.findById(fileId)
-                    .orElseThrow(() -> new FileNotFoundException("File not found"));
+                    .orElseThrow(() -> FileNotFoundException.EXCEPTION);
 
             // DB 에서 파일 메타데이터 삭제
             fileRepository.deleteById(fileId);
@@ -85,7 +83,7 @@ public class FileServiceImpl implements FileService{
 
             return file.getId();
         } catch (IOException ex) {
-            throw new FileStorageExeption("파일 삭제 중 오류가 발생했습니다.", ex);
+            throw FileDeletionException.EXCEPTION;
         }
     }
 
@@ -94,11 +92,11 @@ public class FileServiceImpl implements FileService{
         try {
             // 다운로드 요청이 들어온 파일 확인 후, 해당 파일 없으면 예외
             File file = fileRepository.findById(fileId)
-                    .orElseThrow(() -> new FileNotFoundException("File not found"));
+                    .orElseThrow(() -> FileNotFoundException.EXCEPTION);
 
             // 본인이 만든 파일인지 확인 후, 아니라면 예외
             if (!userName.equals(file.getUserName())) {
-                throw new FileDownloadNotAllowedException("You are not allowed to download this file");
+                throw FileDownloadNotAllowedException.EXCEPTION;
             }
 
             String originalFileName = file.getOriginalFileName();
@@ -114,13 +112,13 @@ public class FileServiceImpl implements FileService{
 
             return new FileDownloadResponse(resource, contentDisposition);
         } catch (IOException ex) {
-            throw new FileStorageExeption("파일 다운로드 중 오류가 발생했습니다.", ex);
+            throw FileDownloadExpcetion.EXCEPTION;
         }
     }
 
 
     // 동일한 이름 충돌 방지를 위해 random 값으로 서버 내부 관리용 파일명 제작
-    public String createStoreFileName(String originalFileName){
+    private String createStoreFileName(String originalFileName){
         return UUID.randomUUID().toString() + "." + extractExt(originalFileName);
     }
 
@@ -130,7 +128,7 @@ public class FileServiceImpl implements FileService{
         return originalFilename.substring(pos + 1);
     }
 
-    public String getFullPath(String filename) {
+    private String getFullPath(String filename) {
         return fileDir + filename;
     }
 }
