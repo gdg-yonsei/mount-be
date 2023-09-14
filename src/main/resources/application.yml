@@ -25,6 +25,7 @@ spring:
 #### logging
 logging:
   level:
+    root: ${logging}
     org:
       hibernate:
         type:

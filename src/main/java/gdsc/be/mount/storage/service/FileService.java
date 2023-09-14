@@ -98,10 +98,10 @@ public class FileService {
 
             String originalFileName = file.getOriginalFileName();
             String saveFileName = file.getStoreFileName();
-            log.info("saveFileName = {}", saveFileName);
 
             UrlResource resource = new UrlResource("file:" + getFullPath(saveFileName));
-            log.info("URL Resource = {}", resource);
+
+            log.debug("Saved File Name = {} / URL Resource = {}", saveFileName, resource);
 
             // 다운로드 시 가독성 위해 최초 파일명 사용
             String encodedOriginalFileName = UriUtils.encode(originalFileName, StandardCharsets.UTF_8);
