@@ -36,7 +36,7 @@ public class FileService {
     public FileUploadResponse uploadFile(MultipartFile file, String userName) {
         try {
             if (file.isEmpty()) {
-                throw new IllegalArgumentException("업로드할 파일이 비어 있습니다.");
+                throw FileEmptyException.EXCEPTION;
             }
 
             String originalFileName = file.getOriginalFilename(); // 사용자가 등록한 최초 파일명
