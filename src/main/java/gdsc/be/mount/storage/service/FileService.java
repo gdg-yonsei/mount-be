@@ -82,7 +82,7 @@ public class FileService {
 
             UrlResource resource = getResource(saveFileName);
 
-            log.debug("Saved File Name = {} / URL Resource = {}", saveFileName, resource);
+            log.debug("[downloadFile] saveFileName: {}, URL Resource: {}, saveFileName, resource");
 
             // 다운로드 시 가독성 위해 최초 파일명 사용
             String encodedOriginalFileName = UriUtils.encode(originalFileName, StandardCharsets.UTF_8);
