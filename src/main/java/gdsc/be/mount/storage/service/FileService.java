@@ -55,11 +55,10 @@ public class FileService {
         }
     }
 
-    public Long deleteFile(Long fileId) {
+    public Long deleteFile(Long fileId, String userName) {
         try {
-            // 삭제할 파일 확인
-            File file = fileRepository.findById(fileId)
-                    .orElseThrow(() -> FileNotFoundException.EXCEPTION);
+            // 파일 확인 및 권한 검사
+            File file = getFileForDeletion(fileId, userName);
 
             // 1. DB 에서 파일 메타데이터 삭제
             deleteFileMetadata(fileId);
@@ -129,6 +128,19 @@ public class FileService {
                         .build();
 
         return fileRepository.save(fileUploadRequest.toEntity());
+    }
+
+    private File getFileForDeletion(Long fileId, String userName) {
+        // DB 에서 해당 파일 메타데이터가 없으면 예외
+        File file = fileRepository.findById(fileId)
+                .orElseThrow(() -> FileNotFoundException.EXCEPTION);
+
+        // 본인이 만든 파일인지 확인 후, 아니라면 예외
+        if (!userName.equals(file.getUserName())) {
+            throw FileDeleteNotAllowedException.EXCEPTION;
+        }
+
+        return file;
     }
 
     private void deleteFileMetadata(Long fileId) {

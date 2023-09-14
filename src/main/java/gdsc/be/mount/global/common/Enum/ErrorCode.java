@@ -23,12 +23,13 @@ public enum ErrorCode {
     // File
     FILE_NOT_FOUND     (404, "F001", "File is not found"),
     FILE_DOWNLOAD_NOT_ALLOWED  (404, "F002", "You are not allowed to download this file"),
-    FILE_UPLOAD_FAILED (500, "F003", "File upload failed"),
-    FILE_DOWNLOAD_FAILED (500, "F004", "File download failed"),
-    FILE_DELETE_FAILED (500, "F005", "File delete failed"),
-    FILE_NOT_ALLOWED (404, "F006", "File is not allowed"),
-    FILE_SIZE_EXCEEDS_LIMIT (400, "F007", "File size exceeds limit"),
-    FILE_NOT_ALLOWED_EXTENSION (400, "F008", "File is not allowed extension");
+    FILE_DELETE_NOT_ALLOWED  (404, "F003", "You are not allowed to delete this file"),
+    FILE_UPLOAD_FAILED (500, "F004", "File upload failed"),
+    FILE_DOWNLOAD_FAILED (500, "F005", "File download failed"),
+    FILE_DELETE_FAILED (500, "F006", "File delete failed"),
+    FILE_NOT_ALLOWED (404, "F007", "File is not allowed"),
+    FILE_SIZE_EXCEEDS_LIMIT (400, "F008", "File size exceeds limit"),
+    FILE_NOT_ALLOWED_EXTENSION (400, "F009", "File is not allowed extension");
 
 
     private final int status;

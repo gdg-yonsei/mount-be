@@ -49,10 +49,10 @@ public class FileController {
      * @return
      * @throws IOException
      */
-    @DeleteMapping(value = "/{fileId}")
-    public ResponseEntity<SuccessResponse<Long>> deleteFile(@PathVariable Long fileId) {
+    @DeleteMapping(value = "/{fileId}/{userName}")
+    public ResponseEntity<SuccessResponse<Long>> deleteFile(@PathVariable Long fileId, @PathVariable String userName) {
 
-        Long deletedFileId = fileService.deleteFile(fileId);
+        Long deletedFileId = fileService.deleteFile(fileId, userName);
 
         return ResponseEntity
             .status(HttpStatus.OK)
