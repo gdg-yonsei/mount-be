@@ -73,8 +73,8 @@ public class FileController {
 
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .header(HttpHeaders.CONTENT_DISPOSITION, content.getContentDisposition())
-                .body(content.getUrlResource());
+                .header(HttpHeaders.CONTENT_DISPOSITION, content.contentDisposition())
+                .body(content.urlResource());
     }
 
 }
