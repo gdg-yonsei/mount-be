@@ -2,11 +2,13 @@ package gdsc.be.mount.global.common.exception;
 import gdsc.be.mount.global.common.Enum.ErrorCode;
 import gdsc.be.mount.global.common.response.ErrorResponse;
 
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
@@ -31,6 +33,22 @@ public class GlobalExceptionHandler {
         log.error("NoHandlerFoundException Occurred: {}", e.getMessage());
         final ErrorResponse response = ErrorResponse.of(NOT_FOUND);
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    // @Validated 에서 발생한 binding error 에 대한 예외 처리
+    @ExceptionHandler
+    protected ResponseEntity<ErrorResponse> handleBindException(ConstraintViolationException e) {
+        log.error("ConstraintViolationException occurred: {}", e.getMessage());
+        final ErrorResponse response = ErrorResponse.of(INVALID_INPUT_VALUE);
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    // @Valid 에서 발생한 binding error 에 대한 예외 처리
+    @ExceptionHandler
+    protected ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+        log.error("MethodArgumentNotValidException occurred: {}", e.getMessage());
+        final ErrorResponse response = ErrorResponse.of(INVALID_INPUT_VALUE);
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
     // 최상위 BusinessException 에 대한 예외처리

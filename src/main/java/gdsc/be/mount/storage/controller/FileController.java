@@ -4,6 +4,7 @@ import gdsc.be.mount.global.common.response.SuccessResponse;
 import gdsc.be.mount.storage.dto.response.FileDownloadResponse;
 import gdsc.be.mount.storage.dto.response.FileUploadResponse;
 import gdsc.be.mount.storage.service.FileService;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.UrlResource;
@@ -11,6 +12,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -21,6 +23,7 @@ import java.net.MalformedURLException;
 @RequiredArgsConstructor
 @RequestMapping("/file")
 @Slf4j
+@Validated
 public class FileController {
 
     private final FileService fileService;
@@ -33,7 +36,7 @@ public class FileController {
      * @throws IOException
      */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<SuccessResponse<FileUploadResponse>> uploadFile(@RequestParam("user") String userName,
+    public ResponseEntity<SuccessResponse<FileUploadResponse>> uploadFile(@RequestParam("user") @NotBlank String userName,
                                                                          @RequestParam("file") MultipartFile file) {
         log.info("File = {}", file);
         FileUploadResponse data = fileService.uploadFile(file, userName);
