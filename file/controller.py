@@ -18,11 +18,8 @@ async def upload_file(file: UploadFile, user_id: str, db: Session = Depends(get_
     server_filename = UPLOAD_DIR + uuid.uuid4().hex + '.' + file_name.split('.')[1]
     content = await file.read()
     
-    if check_file_exists(file_name, user_id, db=db):
+    if has_file(file_name, user_id, db=db):
         raise HTTPException(status_code=409, detail="file already exists")
-    
-    with open(server_filename, 'wb') as f:
-        f.write(content)
     
     user_file = File(
         file_name = file_name,
@@ -31,7 +28,7 @@ async def upload_file(file: UploadFile, user_id: str, db: Session = Depends(get_
         user_id = user_id
     )
     
-    save_file(user_file, user_id, db=db)   
+    save_file(user_file, user_id, content, db=db)   
 
 @fileController.delete('/{file_name}')
 async def delete_file(file_name: str, user_id:str, db: Session = Depends(get_db)):
@@ -39,7 +36,7 @@ async def delete_file(file_name: str, user_id:str, db: Session = Depends(get_db)
     존재하지 않는 파일을 삭제할경우 에러반환
     물리적 삭제 포함
     '''
-    if not check_file_exists(file_name, user_id, db=db):
+    if not has_file(file_name, user_id, db=db):
         raise HTTPException(status_code=404, detail="file doesn't exist")
     
     delete_file_service(file_name, user_id, db=db)
@@ -50,7 +47,7 @@ async def download_file(file_name:str, user_id:str, db: Session = Depends(get_db
     파일 존재하지 않으면 에러반환
     권한이 없으면 다운 불가능 (본인만)
     '''
-    if not check_file_exists(file_name, user_id, db=db):
+    if not has_file(file_name, user_id, db=db):
         raise HTTPException(status_code=404, detail="file doesn't exist")
     
     if not can_access(file_name, user_id, db=db):
