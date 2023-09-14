@@ -101,13 +101,26 @@ public class FileService {
      */
 
     private String createStoreFileName(String originalFileName){
-        // 동일한 이름 충돌 방지를 위해 random 값으로 서버 내부 관리용 파일명 제작
-        return UUID.randomUUID().toString() + "." + extractExt(originalFileName);
+        // 원본 파일명에서 확장자 추출
+        String ext = extractExt(originalFileName);
+
+        // 확장자가 없는 경우 기본 확장자를 사용 (예. txt 로 설정)
+        if (ext.isEmpty()) {
+            ext = "txt";
+        }
+
+        return UUID.randomUUID().toString() + "." + ext;
     }
 
     private String extractExt(String originalFilename) {
         // 확장자 별도 추출
         int pos = originalFilename.lastIndexOf(".");
+
+        // 확장자가 없는 경우 빈 문자열 반환
+        if (pos == -1 || pos == originalFilename.length() - 1) {
+            return "";
+        }
+
         return originalFilename.substring(pos + 1);
     }
 
