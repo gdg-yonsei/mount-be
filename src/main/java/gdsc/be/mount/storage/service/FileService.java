@@ -130,10 +130,15 @@ public class FileService {
         return fileRepository.save(fileUploadRequest.toEntity());
     }
 
+    private File getFileFromDatabase(Long fileId) {
+        return fileRepository.findById(fileId)
+                .orElseThrow(() -> FileNotFoundException.EXCEPTION);
+    }
+
+
     private File getFileForDeletion(Long fileId, String userName) {
         // DB 에서 해당 파일 메타데이터가 없으면 예외
-        File file = fileRepository.findById(fileId)
-                .orElseThrow(() -> FileNotFoundException.EXCEPTION);
+        File file = getFileFromDatabase(fileId);
 
         // 본인이 만든 파일인지 확인 후, 아니라면 예외
         if (!userName.equals(file.getUserName())) {
@@ -154,8 +159,7 @@ public class FileService {
 
     private File getFileForDownload(Long fileId, String userName) {
         // DB 에서 해당 파일 메타데이터가 없으면 예외
-        File file = fileRepository.findById(fileId)
-                .orElseThrow(() -> FileNotFoundException.EXCEPTION);
+        File file = getFileFromDatabase(fileId);
 
         // 본인이 만든 파일인지 확인 후, 아니라면 예외
         if (!userName.equals(file.getUserName())) {
