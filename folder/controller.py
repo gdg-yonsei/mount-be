@@ -19,7 +19,9 @@ db_dependency = Annotated[Session, Depends(get_db)]
 
 current_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
-
+""" 
+POST : Create folder for specific user
+"""
 @folderController.post("/{username}/create")
 async def create_folder(
     db: db_dependency,
@@ -52,7 +54,9 @@ async def create_folder(
     return new_folder
 
 
-""" GET all children(files and folders) for specific parent folder """
+""" 
+GET : Get all children(files and folders) for specific parent folder 
+"""
 @folderController.get("/{username}/{folder_name}")
 async def get_children(
     db: db_dependency,
@@ -68,7 +72,7 @@ async def get_children(
 
 
 """
-GET : all folders in Foldersbase
+GET : Get all folders in Database
 """
 @folderController.get("/{username}/")
 async def get_user_folders(db: db_dependency, username: str):
@@ -76,7 +80,7 @@ async def get_user_folders(db: db_dependency, username: str):
 
 
 """
-PUT : Update Folder name
+PUT : Update Folder name and update modified time
 """
 @folderController.put("/{username}/update")
 async def update_folder_name(
@@ -96,3 +100,4 @@ async def update_folder_name(
     return {
         "message": f"Folder name updated from {existing_folder_name} to {new_folder_name}"
     }
+

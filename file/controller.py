@@ -26,7 +26,9 @@ db_dependency = Annotated[Session, Depends(get_db)]
 
 current_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
-
+""" 
+POST : Upload file and update parent folder's chilren
+"""
 @fileController.post("/{username}/upload")
 async def upload_file(
     db: db_dependency, username: str, parent_id: int, file: UploadFile
@@ -58,6 +60,7 @@ async def upload_file(
     save_file_to_db(db, uploaded_file)
 
 
+
 @fileController.delete("/{username}/delete/", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_file(db: db_dependency, username: str, file_name: str) -> None:
     if not is_user(file_name, username, db):
@@ -70,7 +73,9 @@ async def delete_file(db: db_dependency, username: str, file_name: str) -> None:
 
     delete_file_from_db(db, uploaded_file)
 
-
+""" 
+GET : Download file
+"""
 @fileController.get("/{username}/download/")
 async def download_file(
     db: db_dependency, username: str, file_name: str
@@ -91,11 +96,13 @@ async def download_file(
         },
     )
 
-
+""" 
+GET : Get all files for specific user
+"""
 @fileController.get("/{username}/", status_code=status.HTTP_200_OK)
 async def get_user_files(db: db_dependency, username: str):
     return (
         db.query(Files)
-        .filter(Files.uploader == username, Files.is_folder == False)
+        .filter(Files.uploader == username)
         .all()
     )
