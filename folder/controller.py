@@ -27,13 +27,29 @@ async def create_folder(
     db: db_dependency,
     folder_name: str,
     username: str,
-    parent_id: int = 1,
+    parent_name: str = "root",
 ):
     existing_folder = check_existing_folder(db, folder_name, username)
     if existing_folder:
         raise HTTPException(status_code=400, detail="Folders already exist")
-
-    new_folder = Folders(
+    
+    # 시작 root 폴더 생성
+    if parent_name == 'start':
+        new_folder = Folders(
+        original_name= 'root',
+        stored_name= 'root',
+        file_size=0,
+        uploader=username,
+        uploaded_time=current_time,
+        modified_time=current_time,
+        is_folder=True,
+        parent_id= 0
+        )
+    
+    else:
+        parent_folder = get_parent_folder(db, username, parent_name)
+        
+        new_folder = Folders(
         original_name=folder_name,
         stored_name=folder_name,
         file_size=0,
@@ -41,13 +57,11 @@ async def create_folder(
         uploaded_time=current_time,
         modified_time=current_time,
         is_folder=True,
-        parent_id=parent_id,
-    )
-    if new_folder.parent_id == 0:
-        new_folder.original_name = "root"
-        new_folder.stored_name = "root"
-    else:
-        update_children_folder(db, parent_id, username, new_folder)
+        parent_id= parent_folder.id
+        )
+        
+        update_children_folder(db, parent_name, username, new_folder)
+        
 
     save_folder(db, new_folder)
 

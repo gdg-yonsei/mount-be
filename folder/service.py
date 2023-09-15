@@ -31,10 +31,10 @@ def check_if_folder(db: db_dependency, name : str, username : str):
     
     return data.is_folder is True
 
-def update_children_file(db: db_dependency, parent_id : int, username :str , uploaded_file):
+def update_children_file(db: db_dependency, parent_name : str, username :str , uploaded_file):
     
     parent_folder = db.query(Folders).filter(
-            Folders.id == parent_id, 
+            Folders.original_name == parent_name, 
             Folders.uploader == username).first()
     
     if parent_folder.children is None:
@@ -55,10 +55,10 @@ def update_children_file(db: db_dependency, parent_id : int, username :str , upl
     flag_modified(parent_folder, "children")
     flag_modified(parent_folder, "modified_time")
     
-def update_children_folder(db: db_dependency, parent_id : int, username :str , new_folder):
+def update_children_folder(db: db_dependency, parent_name : int, username :str , new_folder):
     
     parent_folder = db.query(Folders).filter(
-            Folders.id == parent_id, 
+            Folders.original_name == parent_name, 
             Folders.uploader == username).first()
     
     if parent_folder.children is None:
@@ -93,3 +93,4 @@ def get_folder(db, username, folder_name):
         Folders.original_name == folder_name
         ).first()
     return existing_folder
+
