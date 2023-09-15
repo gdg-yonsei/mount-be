@@ -16,20 +16,13 @@ def get_db():
         
 db_dependency = Annotated[Session, Depends(get_db)]
 
-def check_existing_folder(db : db_dependency, folder_name : str, username : str ):
+def get_folder(db, username, folder_name):
     existing_folder = db.query(Folders).filter(
-        Folders.original_name == folder_name,
-        Folders.is_folder == True,
-        Folders.uploader == username
+        Folders.uploader == username,
+        Folders.original_name == folder_name
         ).first()
-    
     return existing_folder
 
-
-def check_if_folder(db: db_dependency, name : str, username : str):
-    data = db.query(Folders.uploader == username, Folders.original_name == name).first()
-    
-    return data.is_folder is True
 
 def update_children_file(db: db_dependency, parent_name : str, username :str , uploaded_file):
     
@@ -80,17 +73,6 @@ def save_folder(db, new_folder):
     db.add(new_folder)
     db.commit()
 
-def get_parent_folder(db, username , folder_name):
-    parent_folder = db.query(Folders).filter(
-        Folders.original_name == folder_name, 
-        Folders.is_folder == True,  
-        Folders.uploader == username).first()
-    return parent_folder
 
-def get_folder(db, username, folder_name):
-    existing_folder = db.query(Folders).filter(
-        Folders.uploader == username,
-        Folders.original_name == folder_name
-        ).first()
-    return existing_folder
+
 

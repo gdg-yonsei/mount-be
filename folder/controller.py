@@ -6,10 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from model.models import Folders
 from utils.utils import get_db
 from folder.service import (
-    check_existing_folder,
     update_children_folder,
     save_folder,
-    get_parent_folder,
     get_folder,
 )
 
@@ -29,7 +27,7 @@ async def create_folder(
     username: str,
     parent_name: str = "root",
 ):
-    existing_folder = check_existing_folder(db, folder_name, username)
+    existing_folder = get_folder(db, username, folder_name)
     if existing_folder:
         raise HTTPException(status_code=400, detail="Folders already exist")
     
@@ -47,7 +45,7 @@ async def create_folder(
         )
     
     else:
-        parent_folder = get_parent_folder(db, username, parent_name)
+        parent_folder = get_folder(db, username, parent_name)
         
         new_folder = Folders(
         original_name=folder_name,
@@ -77,7 +75,7 @@ async def get_children(
     username: str,
     folder_name: str,
 ) -> list:
-    parent_folder = get_parent_folder(db, username, folder_name)
+    parent_folder = get_folder(db, username, folder_name)
 
     if parent_folder:
         return parent_folder.children

@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from model.models import Files
-from folder.service import update_children_file , get_parent_folder
+from folder.service import update_children_file , get_folder
 from utils.utils import is_user
 from file.service import (
     get_db,
@@ -32,7 +32,7 @@ POST : Upload file and update parent folder's chilren
 """
 @fileController.post("/{username}/upload")
 async def upload_file(
-    db: db_dependency, username: str, parent_name: str, file: UploadFile
+    db: db_dependency, username: str, file: UploadFile,  parent_name: str = "root", 
 ) -> None:
     unique_id = uuid.uuid4().hex
     stored_name = f"{file.filename}_{unique_id}"
@@ -45,7 +45,7 @@ async def upload_file(
     if existing_file:
         raise HTTPException(status_code=409, detail="File already exists")
     
-    parent_folder = get_parent_folder(db, username, parent_name)
+    parent_folder = get_folder(db, username, parent_name)
 
     uploaded_file = Files(
         original_name=file.filename,
