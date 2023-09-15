@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,7 +30,12 @@ public class FileSystemStorageService implements StorageService {
     private String uploadPath;
 
     @Override
-    public void init() {
+    public void init(Path root) {
+        try {
+            Files.createDirectory(root);
+        } catch (IOException e) {
+            throw new StorageException("Failed to initialize storage", e);
+        }
 
     }
 
@@ -54,7 +60,7 @@ public class FileSystemStorageService implements StorageService {
 
             Path root = Paths.get(uploadPath);
             if (!Files.exists(root)) {
-                init();
+                init(root);
             }
 
             try (InputStream inputStream = file.getInputStream()) {
