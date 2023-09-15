@@ -32,20 +32,20 @@ public class FileController {
     }
 
     // 파일 다운로드
-    @GetMapping("/downloadFile/{uuid}/{userId}")
-    public ResponseEntity<Resource> downloadFile(@PathVariable("uuid") String uuid, @PathVariable("userId") String userId) {
-        Resource resource = storageService.download(uuid, userId);
+    @GetMapping("/downloadFile/{fileId}/{userId}")
+    public ResponseEntity<Resource> downloadFile(@PathVariable("fileId") Long fileId, @PathVariable("userId") String userId) {
+        Resource resource = storageService.download(fileId, userId);
         return ResponseEntity.ok()
                 .header("Content-Disposition", "attachment; filename=\"" + resource.getFilename() + "\"")
                 .body(resource);
     }
 
     // 파일 삭제
-    @DeleteMapping("/deleteFile/{uuid}/{userId}")
-    public ResponseEntity<String> deleteOne(@PathVariable("uuid") String uuid, @PathVariable("userId") String userId) {
+    @DeleteMapping("/deleteFile/{fileId}/{userId}")
+    public ResponseEntity<String> deleteOne(@PathVariable("fileId") Long fileId, @PathVariable("userId") String userId) {
         try {
-            storageService.deleteOne(uuid, userId);
-            return ResponseEntity.ok().body("File deleted successfully! -> filename = " + uuid);
+            storageService.deleteOne(fileId, userId);
+            return ResponseEntity.ok().body("File deleted successfully! -> filename = " + fileId);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Fail to delete file");
         }

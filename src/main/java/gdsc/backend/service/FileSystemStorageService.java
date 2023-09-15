@@ -69,11 +69,17 @@ public class FileSystemStorageService implements StorageService {
     }
 
     @Override
-    public Resource download(String uuid, String userId) {
-        FileMetaData fileMetaData = fileMetadataRepository.findByUuidAndUserId(uuid, userId);
+    public Resource download(Long fileId, String userId) {
+        FileMetaData fileMetaData = fileMetadataRepository.findByFileId(fileId);
+        // Error: 해당 파일이 없을 경우
         if (fileMetaData == null) {
+            throw new StorageException("File not found");
+        }
+        // Error: 해당 파일의 주인이 아닐 경우
+        if (!fileMetaData.getUserId().equals(userId)) {
             throw new StorageException("You are not authorized to download this file");
         }
+        // Success: 해당 파일이 존재하고, 주인이 맞을 경우
         String saveFileName = fileMetaData.getSaveFileName();
         try {
             Path file = Paths.get(uploadPath + "/" + saveFileName);
@@ -86,12 +92,18 @@ public class FileSystemStorageService implements StorageService {
 
     @Override
     @Transactional
-    public void deleteOne(String uuid, String userId) {
+    public void deleteOne(Long fileId, String userId) {
         try {
-            FileMetaData fileMetaData = fileMetadataRepository.findByUuidAndUserId(uuid, userId);
+            FileMetaData fileMetaData = fileMetadataRepository.findByFileId(fileId);
+            // Error: 해당 파일이 없을 경우
             if (fileMetaData == null) {
+                throw new StorageException("File not found");
+            }
+            // Error: 해당 파일의 주인이 아닐 경우
+            if (!fileMetaData.getUserId().equals(userId)) {
                 throw new StorageException("You are not authorized to delete this file");
             }
+            // Success: 해당 파일이 존재하고, 주인이 맞을 경우
             String saveFileName = fileMetaData.getSaveFileName();
             Path file = Paths.get(uploadPath + "/" + saveFileName);
             Files.deleteIfExists(file);
@@ -99,7 +111,7 @@ public class FileSystemStorageService implements StorageService {
             fileMetaData.deleteFile();
             fileMetadataRepository.save(fileMetaData);
         } catch (Exception e) {
-            throw new StorageException("Failed to delete file " + uuid, e);
+            throw new StorageException("Failed to delete file", e);
         }
 
     }

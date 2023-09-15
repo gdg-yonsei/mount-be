@@ -19,15 +19,8 @@ public class FileMetadataRepository {
         }
     }
 
-    public FileMetaData findByUuidAndUserId(String uuid, String userId) {
-        return em.createQuery("select f from FileMetaData f where f.uuid = :uuid and f.userId = :userId", FileMetaData.class)
-                .setParameter("uuid", uuid)
-                .setParameter("userId", userId)
-                .getSingleResult();
-    }
-
-    public FileMetaData findByFileId(String fileId) {
-        return em.createQuery("select f from FileMetaData f where f.fileId = :fileId", FileMetaData.class)
+    public FileMetaData findByFileId(Long fileId) {
+        return em.createQuery("select f from FileMetaData f where f.id = :fileId", FileMetaData.class)
                 .setParameter("fileId", fileId)
                 .getSingleResult();
     }

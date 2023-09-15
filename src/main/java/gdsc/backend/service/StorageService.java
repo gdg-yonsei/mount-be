@@ -3,7 +3,6 @@ package gdsc.backend.service;
 import org.springframework.core.io.Resource;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.UUID;
 
 public interface StorageService {
 
@@ -11,7 +10,7 @@ public interface StorageService {
 
     void store(MultipartFile file, String userId);
 
-    Resource download(String uuid, String userId);
+    Resource download(Long fileId, String userId);
 
-    void deleteOne(String uuid, String userId);
+    void deleteOne(Long fileId, String userId);
 }
