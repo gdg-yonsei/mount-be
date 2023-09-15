@@ -61,14 +61,7 @@ public class FileSystemStorageService implements StorageService {
                 Files.copy(inputStream, root.resolve(saveFileName));
             }
 
-            FileMetaData fileMetaData = new FileMetaData();
-            fileMetaData.setUuid(uuid);
-            fileMetaData.setUserId(userId);
-            fileMetaData.setFileName(originalFileName);
-            fileMetaData.setSaveFileName(saveFileName);
-            fileMetaData.setFileSize(file.getSize());
-            fileMetaData.setUploadDate(LocalDateTime.now());
-
+            FileMetaData fileMetaData = new FileMetaData(userId, originalFileName, saveFileName, file.getSize(), LocalDateTime.now(), null);
             fileMetadataRepository.save(fileMetaData);
         } catch (Exception e) {
             throw new StorageException("Failed to store file " + file.getOriginalFilename(), e);
@@ -103,7 +96,7 @@ public class FileSystemStorageService implements StorageService {
             Path file = Paths.get(uploadPath + "/" + saveFileName);
             Files.deleteIfExists(file);
 
-            fileMetaData.setDeleteDate(LocalDateTime.now());
+            fileMetaData.deleteFile();
             fileMetadataRepository.save(fileMetaData);
         } catch (Exception e) {
             throw new StorageException("Failed to delete file " + uuid, e);
