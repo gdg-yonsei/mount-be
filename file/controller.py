@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from model.models import Files
-from folder.service import update_children_file
+from folder.service import update_children_file , get_parent_folder
 from utils.utils import is_user
 from file.service import (
     get_db,
@@ -18,6 +18,7 @@ from file.service import (
     save_file_to_db,
     delete_file_from_db,
 )
+
 
 
 fileController = APIRouter(prefix="/file")
@@ -31,7 +32,7 @@ POST : Upload file and update parent folder's chilren
 """
 @fileController.post("/{username}/upload")
 async def upload_file(
-    db: db_dependency, username: str, parent_id: int, file: UploadFile
+    db: db_dependency, username: str, parent_name: str, file: UploadFile
 ) -> None:
     unique_id = uuid.uuid4().hex
     stored_name = f"{file.filename}_{unique_id}"
@@ -43,6 +44,8 @@ async def upload_file(
 
     if existing_file:
         raise HTTPException(status_code=409, detail="File already exists")
+    
+    parent_folder = get_parent_folder(db, username, parent_name)
 
     uploaded_file = Files(
         original_name=file.filename,
@@ -52,15 +55,17 @@ async def upload_file(
         uploaded_time=current_time,
         modified_time=current_time,
         is_folder=False,
-        parent_id=parent_id,
+        parent_id=parent_folder.id,
     )
 
-    update_children_file(db, parent_id, username, uploaded_file)
+    update_children_file(db, parent_name, username, uploaded_file)
 
     save_file_to_db(db, uploaded_file)
 
 
-
+""" 
+DELETE : Delete file for specific user
+"""
 @fileController.delete("/{username}/delete/", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_file(db: db_dependency, username: str, file_name: str) -> None:
     if not is_user(file_name, username, db):
