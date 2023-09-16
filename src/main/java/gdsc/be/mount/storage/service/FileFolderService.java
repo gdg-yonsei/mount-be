@@ -81,13 +81,15 @@ public class FileFolderService {
     }
 
     public FileDownloadResponse downloadFile(Long fileId, String userName) {
-        try {
-            // 파일 확인 및 권한 검사
-            FileFolder fileFolder = getFileForDownloadAfterCheck(fileId, userName);
 
-            String originalFileName = fileFolder.getOriginalName();
-            String saveFileName = fileFolder.getStoredName();
-            String filePath = fileFolder.getPath();
+        // 파일 확인 및 권한 검사
+        FileFolder fileFolder = getFileForDownloadAfterCheck(fileId, userName);
+
+        String originalFileName = fileFolder.getOriginalName();
+        String saveFileName = fileFolder.getStoredName();
+        String filePath = fileFolder.getPath();
+
+        try {
 
             UrlResource resource = getResource(filePath);
 
@@ -131,6 +133,9 @@ public class FileFolderService {
         // 파일 확인 및 권한 검사
         FileFolder fileFolder = getFileForUpdateAfterCheck(folderId, userName);
 
+        // 이미 존재하는 이름으로 변경할 경우 오류
+        checkDuplicateFolderName(newFolderName, fileFolder.getParentId());
+
         String originalFolderName = fileFolder.getOriginalName();
         String originalFolderPath = fileFolder.getPath();
         String newFolderPath = getFullPath(newFolderName, fileFolder.getParentId());
@@ -145,11 +150,9 @@ public class FileFolderService {
             // 2. 파일 시스템에서 파일 이름 업데이트
             updatePhysicalFolderName(originalFolderPath, newFolderPath);
 
-            // 이미 존재하는 이름으로 변경할 경우 오류
-
             return fileFolder.getId();
         } catch (IOException ex) {
-            throw FileUploadException.EXCEPTION;
+            throw FolderUpdateException.EXCEPTION;
         }
     }
 
@@ -338,6 +341,11 @@ public class FileFolderService {
         return fileFolder;
     }
 
+    private void checkDuplicateFolderName(String folderName, Long parentId) {
+        if (fileFolderRepository.existsByOriginalNameAndParentId(folderName, parentId)) {
+            throw FolderNameDuplicateException.EXCEPTION;
+        }
+    }
 
 
 }

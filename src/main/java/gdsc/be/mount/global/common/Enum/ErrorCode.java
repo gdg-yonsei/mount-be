@@ -37,7 +37,9 @@ public enum ErrorCode {
     FILE_EMPTY                      (400, "F010", "File/Folder is empty"),
 
     // Folder
-    FOLDER_CREATE_FAILED            (500, "F011", "Folder create failed");
+    FOLDER_CREATE_FAILED            (500, "F011", "Folder create failed"),
+    FOLDER_UPDATE_FAILED            (500, "F012", "Folder update failed"),
+    FOLDER_NAME_DUPLICATED          (400, "F013", "Folder name is duplicated");
 
 
     private final int status;

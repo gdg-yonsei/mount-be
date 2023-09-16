@@ -5,4 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 
 public interface FileFolderRepository extends JpaRepository<FileFolder, Long> {
+    boolean existsByOriginalNameAndParentId(String folderName, Long parentId);
 }
