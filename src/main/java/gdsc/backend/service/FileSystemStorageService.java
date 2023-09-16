@@ -64,7 +64,7 @@ public class FileSystemStorageService implements StorageService {
             }
 
             // Generate the file name
-            String saveFileName = userId + "_" + uuid + fileExtension;
+            String saveFileName = String.format("%s_%s%s", userId, uuid, fileExtension);
 
             Path root = Paths.get(uploadPath);
             if (!Files.exists(root)) {
