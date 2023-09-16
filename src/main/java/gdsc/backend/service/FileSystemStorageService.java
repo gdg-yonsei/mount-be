@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class FileSystemStorageService implements StorageService {
 
@@ -32,7 +33,7 @@ public class FileSystemStorageService implements StorageService {
     private String uploadPath;
 
     @Override
-    public void init(Path root) {
+    public void initUploadPath(Path root) {
         try {
             Files.createDirectory(root);
         } catch (IOException e) {
@@ -50,37 +51,18 @@ public class FileSystemStorageService implements StorageService {
             }
 
             String originalFileName = file.getOriginalFilename();
+            String saveFileName = getSaveFileName(userId, originalFileName);
 
-            // Generate a unique UUID
-            String uuid = UUID.randomUUID().toString();
+            // 1. Save the file
+            saveOriginalFile(file, saveFileName);
+            // 2. Save the file meta data
+            saveFileMetaData(file, userId, originalFileName, saveFileName);
 
-            // Get the file extension
-            String fileExtension = "";
-            int lastIndex = originalFileName.lastIndexOf(".");
-            if (lastIndex != -1) {
-                fileExtension = originalFileName.substring(lastIndex);
-            } else {
-                throw new IllegalArgumentException("File name does not contain a valid file extension");
-            }
-
-            // Generate the file name
-            String saveFileName = String.format("%s_%s%s", userId, uuid, fileExtension);
-
-            Path root = Paths.get(uploadPath);
-            if (!Files.exists(root)) {
-                init(root);
-            }
-
-            try (InputStream inputStream = file.getInputStream()) {
-                Files.copy(inputStream, root.resolve(saveFileName));
-            }
-
-            FileMetaData fileMetaData = new FileMetaData(userId, originalFileName, saveFileName, file.getSize(), LocalDateTime.now(), null);
-            fileMetadataRepository.save(fileMetaData);
         } catch (Exception e) {
             throw new StorageException("Failed to store file " + file.getOriginalFilename(), e);
         }
     }
+
 
     @Override
     public Resource download(Long fileId, String userId) throws FileNotFoundException, UnauthorizedAccessException{
@@ -132,5 +114,44 @@ public class FileSystemStorageService implements StorageService {
             throw new FileNotFoundException("File not found");
         }
 
+    }
+
+    /**
+     *
+     * Methods for storing files
+     *
+     */
+
+    private String getSaveFileName(String userId, String originalFileName) {
+        // Generate a unique UUID
+        String uuid = UUID.randomUUID().toString();
+
+        // Get the file extension
+        String fileExtension = "";
+        int lastIndex = originalFileName.lastIndexOf(".");
+        if (lastIndex != -1) {
+            fileExtension = originalFileName.substring(lastIndex);
+        } else {
+            throw new IllegalArgumentException("File name does not contain a valid file extension");
+        }
+
+        // Return the save file name
+        return String.format("%s_%s%s", userId, uuid, fileExtension);
+    }
+
+    private void saveFileMetaData(MultipartFile file, String userId, String originalFileName, String saveFileName) {
+        FileMetaData fileMetaData = new FileMetaData(userId, originalFileName, saveFileName, file.getSize(), LocalDateTime.now(), null);
+        fileMetadataRepository.save(fileMetaData);
+    }
+
+    private void saveOriginalFile(MultipartFile file, String saveFileName) throws IOException {
+        Path root = Paths.get(uploadPath);
+        if (!Files.exists(root)) {
+            initUploadPath(root);
+        }
+
+        try (InputStream inputStream = file.getInputStream()) {
+            Files.copy(inputStream, root.resolve(saveFileName));
+        }
     }
 }
