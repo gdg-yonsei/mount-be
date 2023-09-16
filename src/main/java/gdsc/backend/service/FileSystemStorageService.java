@@ -20,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -66,12 +67,11 @@ public class FileSystemStorageService implements StorageService {
 
     @Override
     public Resource download(Long fileId, String userId) throws FileNotFoundException, UnauthorizedAccessException{
-        FileMetaData fileMetaData = fileMetadataRepository.findByFileId(fileId);
+        Optional<FileMetaData> fileMetaDataOptional = fileMetadataRepository.findById(fileId);
 
         // [Error] StorageException : 해당 파일 메타데이터가 없을 경우
-        if (fileMetaData == null) {
-            throw new StorageException("File meta data not found");
-        }
+        FileMetaData fileMetaData = fileMetaDataOptional.orElseThrow(() -> new StorageException("File meta data not found"));
+
         // [Error] UnauthorizedAccessException : 해당 파일의 주인이 아닐 경우
         if (!fileMetaData.getUserId().equals(userId)) {
             throw new UnauthorizedAccessException("You are not authorized to download this file");
@@ -91,12 +91,11 @@ public class FileSystemStorageService implements StorageService {
     @Override
     @Transactional
     public void deleteOne(Long fileId, String userId) throws FileNotFoundException, UnauthorizedAccessException{
-        FileMetaData fileMetaData = fileMetadataRepository.findByFileId(fileId);
+        Optional<FileMetaData> fileMetaDataOptional = fileMetadataRepository.findById(fileId);
 
         // [Error] StorageException : 해당 파일 메타데이터가 없을 경우
-        if (fileMetaData == null) {
-            throw new StorageException("File meta data not found");
-        }
+        FileMetaData fileMetaData = fileMetaDataOptional.orElseThrow(() -> new StorageException("File meta data not found"));
+
         // [Error] UnauthorizedAccessException : 해당 파일의 주인이 아닐 경우
         if (!fileMetaData.getUserId().equals(userId)) {
             throw new UnauthorizedAccessException("You are not authorized to delete this file");
