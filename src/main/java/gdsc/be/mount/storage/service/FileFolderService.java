@@ -6,6 +6,7 @@ import gdsc.be.mount.storage.dto.request.FolderCreateRequest;
 import gdsc.be.mount.storage.dto.response.FileDownloadResponse;
 import gdsc.be.mount.storage.dto.response.FileUploadResponse;
 import gdsc.be.mount.storage.dto.response.FolderCreateResponse;
+import gdsc.be.mount.storage.dto.response.FolderInfoResponse;
 import gdsc.be.mount.storage.entity.FileFolder;
 import gdsc.be.mount.storage.exception.*;
 import gdsc.be.mount.storage.repository.FileFolderRepository;
@@ -155,6 +156,11 @@ public class FileFolderService {
             throw FolderUpdateException.EXCEPTION;
         }
     }
+
+    public FolderInfoResponse getFolderMetadata(Long folderId, String userName) {
+        return fileFolderRepository.findAllByIdAndUserName(folderId, userName);
+    }
+
 
     // ====================================================================================================
 
