@@ -1,5 +1,6 @@
 package gdsc.be.mount.storage.entity;
 
+import gdsc.be.mount.storage.Enum.FileFolderType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -18,24 +19,33 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class File {
+public class FileFolder {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank
-    private String originalFileName; // 사용자가 업로드한 파일명
-    @NotBlank
-    private String storeFileName; // 서버 내부에서 관리할 파일명 (충돌 방지)
+    private FileFolderType fileFolderType;
+
+    private Long parentId; // 부모 폴더 id
+    
+    private Long childId; // 자식 폴더 id
 
     @NotBlank
-    private String filePath;
-    @NotNull
-    private Long fileSize;
+    private String originalName; // 사용자가 업로드한 파일명
+
     @NotBlank
-    private String fileType;
+    private String storedName; // 서버 내부에서 관리할 파일명 (충돌 방지)
+
+    @NotBlank
+    private String path;
+
+    private Long size;
+
+    private String contentType;
+
     @NotNull
     private LocalDateTime uploadTime;
+
     @NotBlank
     private String userName; // 사용자
 }
