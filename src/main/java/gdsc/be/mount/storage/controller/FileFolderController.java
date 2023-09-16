@@ -101,4 +101,22 @@ public class FileFolderController {
                 .body(SuccessResponse.of(data));
     }
 
+    /**
+     * 폴더 이름 변경
+     * @param folderId 폴더 id
+     * @param userName 사용자 이름
+     * @param newFolderName 새로운 폴더 이름
+     */
+    @PutMapping("/folders/{folderId}")
+    public ResponseEntity<SuccessResponse<Long>> updateFolderName(
+            @PathVariable Long folderId,
+            @RequestParam("user") @NotBlank String userName,
+            @RequestParam("new") @NotBlank String newFolderName) {
+        Long data = fileFolderService.updateFolderName(folderId, userName, newFolderName);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(SuccessResponse.of(data));
+    }
+
 }

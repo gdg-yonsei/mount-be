@@ -20,18 +20,23 @@ public enum ErrorCode {
     DATA_SIZE_VIOLATION             (400, "C010", "FileFolder size exceeds limit"),
     CONFLICT                        (409, "C011", "Conflict occurred"),
 
-    // FileFolder
-    FILE_NOT_FOUND                  (404, "F001", "FileFolder is not found"),
+    // File / Folder
+    FILE_NOT_FOUND                  (404, "F001", "File or folder is not found"),
     FILE_DOWNLOAD_NOT_ALLOWED       (404, "F002", "You are not allowed to download this file"),
-    FILE_DELETE_NOT_ALLOWED         (404, "F003", "You are not allowed to delete this file"),
-    FILE_UPLOAD_FAILED              (500, "F004", "FileFolder upload failed"),
-    FILE_DOWNLOAD_FAILED            (500, "F005", "FileFolder download failed"),
-    FILE_DELETE_FAILED              (500, "F006", "FileFolder delete failed"),
-    FILE_NOT_ALLOWED                (404, "F007", "FileFolder is not allowed"),
-    FILE_SIZE_EXCEEDS_LIMIT         (400, "F008", "FileFolder size exceeds limit"),
-    FILE_NOT_ALLOWED_EXTENSION      (400, "F009", "FileFolder is not allowed extension"),
-    FILE_EMPTY                      (400, "F010", "FileFolder is empty"),
+    FILE_DELETE_NOT_ALLOWED         (404, "F003", "You are not allowed to delete this file or folder"),
+    FILE_UPLOAD_NOT_ALLOWED         (404, "F004", "You are not allowed to upload this file or folder"),
+    FILE_NOT_ALLOWED                (404, "F007", "File or folder is not allowed"),
 
+    // File
+    FILE_UPLOAD_FAILED              (500, "F004", "File upload failed"),
+    FILE_DOWNLOAD_FAILED            (500, "F005", "File download failed"),
+    FILE_DELETE_FAILED              (500, "F006", "File delete failed"),
+
+    FILE_SIZE_EXCEEDS_LIMIT         (400, "F008", "File/Folder size exceeds limit"),
+    FILE_NOT_ALLOWED_EXTENSION      (400, "F009", "File/Folder is not allowed extension"),
+    FILE_EMPTY                      (400, "F010", "File/Folder is empty"),
+
+    // Folder
     FOLDER_CREATE_FAILED            (500, "F011", "Folder create failed");
 
 

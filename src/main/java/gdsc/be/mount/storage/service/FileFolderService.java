@@ -63,7 +63,7 @@ public class FileFolderService {
 
     public Long deleteFile(Long fileId, String userName) {
         // 파일 확인 및 권한 검사
-        FileFolder fileFolder = getFileForDeletion(fileId, userName);
+        FileFolder fileFolder = getFileForDeletionAfterCheck(fileId, userName);
 
         log.debug("[deleteFile] FileName: {}", fileFolder.getOriginalName());
 
@@ -83,7 +83,7 @@ public class FileFolderService {
     public FileDownloadResponse downloadFile(Long fileId, String userName) {
         try {
             // 파일 확인 및 권한 검사
-            FileFolder fileFolder = getFileForDownload(fileId, userName);
+            FileFolder fileFolder = getFileForDownloadAfterCheck(fileId, userName);
 
             String originalFileName = fileFolder.getOriginalName();
             String saveFileName = fileFolder.getStoredName();
@@ -124,6 +124,32 @@ public class FileFolderService {
 
         } catch (IOException e) {
             throw FolderCreateException.EXCEPTION;
+        }
+    }
+
+    public Long updateFolderName(Long folderId, String userName, String newFolderName) {
+        // 파일 확인 및 권한 검사
+        FileFolder fileFolder = getFileForUpdateAfterCheck(folderId, userName);
+
+        String originalFolderName = fileFolder.getOriginalName();
+        String originalFolderPath = fileFolder.getPath();
+        String newFolderPath = getFullPath(newFolderName, fileFolder.getParentId());
+
+        log.debug("[updateFolderName] FileName: {}, NewFolderName : {}", originalFolderName, newFolderName);
+
+        try {
+            // 1. DB 에서 파일 이름 업데이트 및 폴더 경로 수정
+            fileFolder.updateOriginalName(newFolderName);
+            fileFolder.updatePath(newFolderPath);
+
+            // 2. 파일 시스템에서 파일 이름 업데이트
+            updatePhysicalFolderName(originalFolderPath, newFolderPath);
+
+            // 이미 존재하는 이름으로 변경할 경우 오류
+
+            return fileFolder.getId();
+        } catch (IOException ex) {
+            throw FileUploadException.EXCEPTION;
         }
     }
 
@@ -238,40 +264,6 @@ public class FileFolderService {
     }
 
     /*
-     파일 확인 및 권한 검사 관련 메서드
-     */
-
-    private FileFolder getFileFromDatabase(Long fileId) {
-        return fileFolderRepository.findById(fileId)
-                .orElseThrow(() -> FileNotFoundException.EXCEPTION);
-    }
-
-    private FileFolder getFileWithOwnershipCheck(Long fileId, String userName, boolean isForDownload) {
-        // DB에서 해당 파일 메타데이터를 가져옴
-        FileFolder fileFolder = getFileFromDatabase(fileId);
-
-        // 본인이 만든 파일인지 확인 후, 아니라면 예외를 던짐
-        if (!userName.equals(fileFolder.getUserName())) {
-            if (isForDownload) {
-                throw FileDownloadNotAllowedException.EXCEPTION;
-            } else {
-                throw FileDeleteNotAllowedException.EXCEPTION;
-            }
-        }
-
-        return fileFolder;
-    }
-
-    private FileFolder getFileForDeletion(Long fileId, String userName) {
-        return getFileWithOwnershipCheck(fileId, userName, false);
-    }
-
-    private FileFolder getFileForDownload(Long fileId, String userName) {
-        return getFileWithOwnershipCheck(fileId, userName, true);
-    }
-
-
-    /*
     폴더 생성 관련 메서드
      */
 
@@ -298,6 +290,54 @@ public class FileFolderService {
                     .build();
         return fileFolderRepository.save(folderCreateRequest.toEntity());
     }
+
+    /*
+    폴더 업데이트 관련 메서드
+     */
+    private void updatePhysicalFolderName(String originalFolderPath, String newFolderPath) throws IOException {
+        Files.move(Path.of(originalFolderPath), Path.of(newFolderPath));
+    }
+
+    /*
+     파일 및 폴더 권한 검사 관련 메서드
+     */
+    private FileFolder getFileFromDatabase(Long fileId) {
+        return fileFolderRepository.findById(fileId)
+                .orElseThrow(() -> FileNotFoundException.EXCEPTION);
+    }
+
+    private void checkOwnership(String userName, String owner, boolean isForDownload, boolean isForUpdate) {
+        if (!userName.equals(owner)) {
+
+            if(isForDownload){
+                throw FileDownloadNotAllowedException.EXCEPTION;
+            }else if(isForUpdate){
+                throw FileUpdateNotAllowedException.EXCEPTION;
+            }else{
+                throw FileDeleteNotAllowedException.EXCEPTION;
+            }
+
+        }
+    }
+
+    private FileFolder getFileForDownloadAfterCheck(Long fileId, String userName) {
+        FileFolder fileFolder = getFileFromDatabase(fileId);
+        checkOwnership(userName, fileFolder.getUserName(),true, false);
+        return fileFolder;
+    }
+
+    private FileFolder getFileForDeletionAfterCheck(Long fileId, String userName) {
+        FileFolder fileFolder = getFileFromDatabase(fileId);
+        checkOwnership(userName, fileFolder.getUserName(),false, false);
+        return fileFolder;
+    }
+
+    private FileFolder getFileForUpdateAfterCheck(Long fileId, String userName) {
+        FileFolder fileFolder = getFileFromDatabase(fileId);
+        checkOwnership(userName, fileFolder.getUserName(), false, true);
+        return fileFolder;
+    }
+
 
 
 }

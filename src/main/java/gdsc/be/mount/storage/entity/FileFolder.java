@@ -48,4 +48,12 @@ public class FileFolder {
 
     @NotBlank
     private String userName; // 사용자
+
+    public void updateOriginalName(String originalName) {
+        this.originalName = originalName;
+    }
+
+    public void updatePath(String path) {
+        this.path = path;
+    }
 }
