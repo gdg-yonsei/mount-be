@@ -20,6 +20,10 @@
 - 존재하지 않는 파일을 다운로드할 경우 ‘FileNotFoundException’ 발셍
 - 본인이 만든 파일이 아닐 경우 ‘FileDownloadNotAllowedException’ 발생 
 
+#### 4. 폴더 생성 기능
+- Logic : 파일 업로드 기능과 동일
+
+
 ## Test Case
 
 ### Repository 테스트 (JPA CRUD)

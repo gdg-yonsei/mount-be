@@ -44,17 +44,16 @@ public class FileFolderService {
 
         String originalFileName = file.getOriginalFilename(); // 사용자가 등록한 최초 파일명
         String storeFileName = createStoreFileName(originalFileName); // 서버 내부에서 관리할 파일명
+        String filePath = getFullPath(storeFileName, parentId); // 파일이 저장될 경로
 
-        log.debug("[uploadFile] originalFileName: {}, storeFileName: {}", originalFileName, storeFileName);
+        log.debug("[uploadFile] originalFileName: {}, filePath: {}", originalFileName, filePath);
 
         try {
             // 1. 파일 시스템에서 물리적 파일 저장
-            String filePath = getFullPath(storeFileName, parentId);
-            System.out.println("😃" + filePath);
             savePhysicalFile(file, filePath);
 
             // 2. DB 에 파일 메타데이터 저장
-            FileFolder savedFileFolder = saveFileMetadataToDB(originalFileName, storeFileName, filePath, file.getSize(), file.getContentType(), userName);
+            FileFolder savedFileFolder = saveFileMetadataToDB(originalFileName, storeFileName, filePath, file.getSize(), file.getContentType(), userName, parentId);
 
             return FileUploadResponse.fromEntity(savedFileFolder);
         } catch (IOException ex) {
@@ -192,11 +191,11 @@ public class FileFolderService {
         file.transferTo(Files.createFile(Path.of(filePath)));
     }
 
-    private FileFolder saveFileMetadataToDB(String originalFileName, String storeFileName, String filePath, long fileSize, String fileType, String userName) {
+    private FileFolder saveFileMetadataToDB(String originalFileName, String storeFileName, String filePath, long fileSize, String fileType, String userName, Long parentId) {
         FileUploadRequest fileUploadRequest =
                 FileUploadRequest.builder()
                         .fileFolderType(FileFolderType.FILE)
-                        .parentId(null)
+                        .parentId(parentId)
                         .originalName(originalFileName)
                         .storedName(storeFileName)
                         .path(filePath)
