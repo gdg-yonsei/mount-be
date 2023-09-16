@@ -7,7 +7,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     properties:
       hibernate:
         # show_sql: true
@@ -15,9 +15,9 @@ spring:
 
   servlet:
     multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
-      location: C:/Users/s_mmin/Desktop/GDSC/uploaded_files
+#      max-file-size: 10MB
+#      max-request-size: 10MB
+      location: ../uploaded_files
 
 logging.level:
   org.hibernate.SQL: debug
