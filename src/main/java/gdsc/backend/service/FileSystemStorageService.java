@@ -3,6 +3,7 @@ package gdsc.backend.service;
 
 import gdsc.backend.domain.FileMetaData;
 import gdsc.backend.exception.StorageException;
+import gdsc.backend.exception.UnauthorizedAccessException;
 import gdsc.backend.repository.FileMetadataRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -53,7 +55,13 @@ public class FileSystemStorageService implements StorageService {
             String uuid = UUID.randomUUID().toString();
 
             // Get the file extension
-            String fileExtension = originalFileName.substring(originalFileName.lastIndexOf("."));
+            String fileExtension = "";
+            int lastIndex = originalFileName.lastIndexOf(".");
+            if (lastIndex != -1) {
+                fileExtension = originalFileName.substring(lastIndex);
+            } else {
+                throw new IllegalArgumentException("File name does not contain a valid file extension");
+            }
 
             // Generate the file name
             String saveFileName = userId + "_" + uuid + fileExtension;
@@ -75,49 +83,53 @@ public class FileSystemStorageService implements StorageService {
     }
 
     @Override
-    public Resource download(Long fileId, String userId) {
+    public Resource download(Long fileId, String userId) throws FileNotFoundException, UnauthorizedAccessException{
         FileMetaData fileMetaData = fileMetadataRepository.findByFileId(fileId);
-        // Error: 해당 파일이 없을 경우
+
+        // [Error] StorageException : 해당 파일 메타데이터가 없을 경우
         if (fileMetaData == null) {
-            throw new StorageException("File not found");
+            throw new StorageException("File meta data not found");
         }
-        // Error: 해당 파일의 주인이 아닐 경우
+        // [Error] UnauthorizedAccessException : 해당 파일의 주인이 아닐 경우
         if (!fileMetaData.getUserId().equals(userId)) {
-            throw new StorageException("You are not authorized to download this file");
+            throw new UnauthorizedAccessException("You are not authorized to download this file");
         }
-        // Success: 해당 파일이 존재하고, 주인이 맞을 경우
+        // [Success] : 해당 파일이 존재하고, 주인이 맞을 경우
         String saveFileName = fileMetaData.getSaveFileName();
         try {
             Path file = Paths.get(uploadPath + "/" + saveFileName);
             Resource resource = new UrlResource(file.toUri());
             return resource;
         } catch (Exception e) {
-            throw new StorageException("Failed to download file " + saveFileName, e);
+            // [Error] FileNotFoundException : 해당 파일이 없을 경우
+            throw new FileNotFoundException("File not found");
         }
     }
 
     @Override
     @Transactional
-    public void deleteOne(Long fileId, String userId) {
+    public void deleteOne(Long fileId, String userId) throws FileNotFoundException, UnauthorizedAccessException{
+        FileMetaData fileMetaData = fileMetadataRepository.findByFileId(fileId);
+
+        // [Error] StorageException : 해당 파일 메타데이터가 없을 경우
+        if (fileMetaData == null) {
+            throw new StorageException("File meta data not found");
+        }
+        // [Error] UnauthorizedAccessException : 해당 파일의 주인이 아닐 경우
+        if (!fileMetaData.getUserId().equals(userId)) {
+            throw new UnauthorizedAccessException("You are not authorized to delete this file");
+        }
+        // [Success]: 해당 파일이 존재하고, 주인이 맞을 경우
+        String saveFileName = fileMetaData.getSaveFileName();
         try {
-            FileMetaData fileMetaData = fileMetadataRepository.findByFileId(fileId);
-            // Error: 해당 파일이 없을 경우
-            if (fileMetaData == null) {
-                throw new StorageException("File not found");
-            }
-            // Error: 해당 파일의 주인이 아닐 경우
-            if (!fileMetaData.getUserId().equals(userId)) {
-                throw new StorageException("You are not authorized to delete this file");
-            }
-            // Success: 해당 파일이 존재하고, 주인이 맞을 경우
-            String saveFileName = fileMetaData.getSaveFileName();
             Path file = Paths.get(uploadPath + "/" + saveFileName);
-            Files.deleteIfExists(file);
+            Files.delete(file);
 
             fileMetaData.deleteFile();
             fileMetadataRepository.save(fileMetaData);
         } catch (Exception e) {
-            throw new StorageException("Failed to delete file", e);
+            // [Error] FileNotFoundException : 해당 파일이 없을 경우
+            throw new FileNotFoundException("File not found");
         }
 
     }
