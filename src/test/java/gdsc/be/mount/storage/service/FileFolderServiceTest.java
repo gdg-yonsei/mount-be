@@ -1,9 +1,10 @@
 package gdsc.be.mount.storage.service;
 
+import gdsc.be.mount.storage.Enum.FileFolderType;
 import gdsc.be.mount.storage.dto.response.FileUploadResponse;
 import gdsc.be.mount.storage.dto.response.FileDownloadResponse;
-import gdsc.be.mount.storage.entity.File;
-import gdsc.be.mount.storage.repository.FileRepository;
+import gdsc.be.mount.storage.entity.FileFolder;
+import gdsc.be.mount.storage.repository.FileFolderRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,64 +22,65 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Service 테스트")
-public class FileServiceTest {
+public class FileFolderServiceTest {
 
     @Mock
-    private FileRepository fileRepository;
+    private FileFolderRepository fileFolderRepository;
 
     @InjectMocks
-    private FileService fileService;
+    private FileFolderService fileFolderService;
 
 
     // ================ 이후 테스트 고도화 작업 필요
     @Test
-    @DisplayName("File upload 테스트")
+    @DisplayName("FileFolder upload 테스트")
     public void testUploadFile() {
         // Given
         String userName = "testUser";
         String originalFileName = "test.txt";
         String contentType = "text/plain";
-        byte[] content = "This is a test file content".getBytes();
+        byte[] content = "This is a test fileFolder content".getBytes();
 
         MockMultipartFile multipartFile = new MockMultipartFile(
-                "file", originalFileName, contentType, content);
-        File file = createFileEntity();
+                "fileFolder", originalFileName, contentType, content);
+        FileFolder fileFolder = createFileEntity();
 
-        when(fileRepository.save(any())).thenReturn(file);
+        when(fileFolderRepository.save(any())).thenReturn(fileFolder);
 
         // 파일 시스템 작업 모킹 필요
-        // Mock Files.transfer method to simulate file transfer
-        // doNothing().when(file).transferTo(any(java.io.File.class));
+        // Mock Files.transfer method to simulate fileFolder transfer
+        // doNothing().when(fileFolder).transferTo(any(java.io.FileFolder.class));
 
         // When
-        FileUploadResponse response = fileService.uploadFile(multipartFile, userName);
+        FileUploadResponse response = fileFolderService.uploadFile(multipartFile, userName, 3L);
 
         // Then
         assertNotNull(response);
         assertEquals(originalFileName, response.originalFileName());
 
-        verify(fileRepository, times(1)).save(any());
+        verify(fileFolderRepository, times(1)).save(any());
     }
 
     @Test
-    @DisplayName("File delete 테스트")
+    @DisplayName("FileFolder delete 테스트")
     public void testDeleteFile() {
         // 파일 시스템 작업 모킹 필요
         // Mock Files.delete method to simulate file deletion
     }
 
     @Test
+    @DisplayName("FileFolder download 테스트")
     public void testDownloadFile() {
         // Given
         Long fileId = 1L;
         String userName = "testUser";
 
-        File file = createFileEntity();
+        FileFolder fileFolder = createFileEntity();
 
-        when(fileRepository.findById(fileId)).thenReturn(Optional.of(file));
+        when(fileFolderRepository.findById(fileId)).thenReturn(Optional.of(fileFolder));
 
         // When
-        FileDownloadResponse response = fileService.downloadFile(fileId, userName);
+        FileDownloadResponse response = fileFolderService.downloadFile(fileId, userName);
 
         // Then
         assertNotNull(response);
@@ -86,17 +88,19 @@ public class FileServiceTest {
         assertNotNull(response.contentDisposition());
 
         assertTrue(response.urlResource() instanceof UrlResource);
-        assertTrue(response.contentDisposition().contains(file.getOriginalFileName()));
+        assertTrue(response.contentDisposition().contains(fileFolder.getOriginalName()));
     }
 
-    public File createFileEntity(){
-        return File.builder()
+    public FileFolder createFileEntity(){
+        return FileFolder.builder()
+            .fileFolderType(FileFolderType.FILE)
+            .parentId(null)
+            .childId(null)
             .id(1L)
-            .originalFileName("test.txt")
-            .storeFileName("RANDOMRANDOM")
-            .filePath("/file/path")
-            .fileSize(300L)
-            .fileType("text/plain")
+            .originalName("test.txt")
+            .storedName("RANDOMRANDOM")
+            .path("/file/path")
+            .size(300L)
             .uploadTime(LocalDateTime.of(2023, 9, 3, 2, 1))
             .userName("testUser")
             .build();
