@@ -1,10 +1,7 @@
 package gdsc.be.mount.storage.entity;
 
 import gdsc.be.mount.storage.Enum.FileFolderType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -13,6 +10,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -27,8 +26,9 @@ public class FileFolder {
     private FileFolderType fileFolderType;
 
     private Long parentId; // 부모 폴더 id
-    
-    private Long childId; // 자식 폴더 id
+
+    @ElementCollection
+    private List<Long> childIds; // 자식 폴더 id
 
     @NotBlank
     private String originalName; // 사용자가 업로드한 파일명
@@ -55,5 +55,8 @@ public class FileFolder {
 
     public void updatePath(String path) {
         this.path = path;
+    }
+    public void addChildId(Long childId) {
+        this.childIds.add(childId);
     }
 }

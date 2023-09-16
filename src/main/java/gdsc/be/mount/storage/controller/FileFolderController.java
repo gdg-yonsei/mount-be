@@ -123,13 +123,11 @@ public class FileFolderController {
     /**
      * 특정 폴더에 대한 요청 시 폴더에 포함된 파일 및 폴더의 메타데이터 목록을 반환
      * @param folderId 폴더 id
-     *                 null 일 경우 최상위 폴더의 메타데이터 목록을 반환
-     *                 null 이 아닐 경우 해당 폴더의 메타데이터 목록을 반환
      * @param userName 사용자 이름
      */
     @GetMapping("/folders/{folderId}")
     public ResponseEntity<SuccessResponse<FolderInfoResponse>> getFolderMetadata(
-            @PathVariable @Nullable Long folderId,
+            @PathVariable Long folderId,
             @RequestParam("user") @NotBlank String userName) {
         FolderInfoResponse data = fileFolderService.getFolderMetadata(folderId, userName);
 

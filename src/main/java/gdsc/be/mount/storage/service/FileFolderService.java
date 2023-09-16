@@ -56,6 +56,11 @@ public class FileFolderService {
             // 2. DB 에 파일 메타데이터 저장
             FileFolder savedFileFolder = saveFileMetadataToDB(originalFileName, storeFileName, filePath, file.getSize(), file.getContentType(), userName, parentId);
 
+            // 3. 부모 폴더에 자식 폴더 id 추가
+            if(parentId != null){
+                addChildIdIntoParentFolder(parentId, savedFileFolder.getId());
+            }
+
             return FileUploadResponse.fromEntity(savedFileFolder);
         } catch (IOException ex) {
             throw FileUploadException.EXCEPTION;
@@ -82,7 +87,6 @@ public class FileFolderService {
     }
 
     public FileDownloadResponse downloadFile(Long fileId, String userName) {
-
         // 파일 확인 및 권한 검사
         FileFolder fileFolder = getFileForDownloadAfterCheck(fileId, userName);
 
@@ -123,8 +127,12 @@ public class FileFolderService {
             // 2. DB 에 폴더 메타데이터 저장
             FileFolder savedFileFolder = saveFolderMetadataToDB(folderName, folderPath, parentId, userName);
 
-            return FolderCreateResponse.fromEntity(savedFileFolder);
+            // 3. 부모 폴더에 자식 폴더 id 추가
+            if(parentId != null){
+                addChildIdIntoParentFolder(parentId, savedFileFolder.getId());
+            }
 
+            return FolderCreateResponse.fromEntity(savedFileFolder);
         } catch (IOException e) {
             throw FolderCreateException.EXCEPTION;
         }
@@ -158,7 +166,7 @@ public class FileFolderService {
     }
 
     public FolderInfoResponse getFolderMetadata(Long folderId, String userName) {
-        return fileFolderRepository.findAllByIdAndUserName(folderId, userName);
+        return FolderInfoResponse.fromEntity(fileFolderRepository.findAllByIdAndUserName(folderId, userName));
     }
 
 
@@ -212,14 +220,14 @@ public class FileFolderService {
     private String getFullPath(String storeFileName, Long parentId) {
         String uploadPath = this.uploadPath;
         if (parentId != null) {
-            uploadPath += getParentFolderOriginalName(parentId) + "/";
+            uploadPath = getParentFolderOriginalName(parentId) + "/";
         }
         return uploadPath + storeFileName;
     }
 
     private String getParentFolderOriginalName(Long parentId) {
         FileFolder parentFileFolder = fileFolderRepository.findById(parentId).orElseThrow();
-        return parentFileFolder.getOriginalName();
+        return parentFileFolder.getPath();
     }
 
     private void savePhysicalFile(MultipartFile file, String filePath) throws IOException {
@@ -239,8 +247,12 @@ public class FileFolderService {
                         .uploadTime(LocalDateTime.now())
                         .userName(userName)
                         .build();
-
         return fileFolderRepository.save(fileUploadRequest.toEntity());
+    }
+
+    private void addChildIdIntoParentFolder(Long parentId, Long childId) {
+        FileFolder parentFileFolder = fileFolderRepository.findById(parentId).orElseThrow();
+        parentFileFolder.addChildId(childId);
     }
 
     /*
@@ -290,7 +302,7 @@ public class FileFolderService {
                 = FolderCreateRequest.builder()
                     .fileFolderType(FileFolderType.FOLDER)
                     .parentId(parentId)
-                    .childId(null)
+                    .childIds(null)
                     .originalName(folderName) // 추후에 폴더명 변경 기능 추가
                     .storedName(folderName)
                     .path(folderDir)

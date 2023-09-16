@@ -5,12 +5,13 @@ import gdsc.be.mount.storage.entity.FileFolder;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Builder
 public record FolderCreateRequest (
     FileFolderType fileFolderType,
     Long parentId,
-    Long childId,
+    List<Long> childIds,
     String originalName,
     String storedName,
     String path,
@@ -23,7 +24,7 @@ public record FolderCreateRequest (
             return FileFolder.builder()
                     .fileFolderType(fileFolderType)
                     .parentId(parentId)
-                    .childId(childId)
+                    .childIds(childIds)
                     .originalName(originalName)
                     .storedName(storedName)
                     .path(path)
