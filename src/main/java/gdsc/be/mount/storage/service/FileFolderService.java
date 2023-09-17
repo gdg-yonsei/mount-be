@@ -167,7 +167,7 @@ public class FileFolderService {
 
     public FolderInfoResponse getFolderMetadata(Long folderId, String userName) {
 
-        // DB Connection 한 번에 처리하도록 쿼리문 수정 필요
+        // 추후 수정 : DB Connection 한 번에 처리하도록 두 개의 서브 쿼리를 결합 (UNION)
 
         FileFolder folder = fileFolderRepository.findAllByIdAndUserName(folderId, userName);
         List<FileFolder> childFileFolders = fileFolderRepository.findChildrenByChildIds(folder.getChildIds());
