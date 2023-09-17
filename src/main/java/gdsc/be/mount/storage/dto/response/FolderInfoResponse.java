@@ -11,18 +11,18 @@ import java.util.List;
 public record FolderInfoResponse (
         FileFolderType fileFolderType,
         Long parentId,
-        List<Long> childIds,
+        List<FileFolder> childInfo,
         String originalName,
         String storedName,
         String path,
         LocalDateTime uploadTime,
         String userName
 ) {
-    public static FolderInfoResponse fromEntity(FileFolder fileFolder){
+    public static FolderInfoResponse fromEntity(FileFolder fileFolder, List<FileFolder> childInfo){
         return FolderInfoResponse.builder()
                 .fileFolderType(fileFolder.getFileFolderType())
                 .parentId(fileFolder.getParentId())
-                .childIds(fileFolder.getChildIds())
+                .childInfo(childInfo)
                 .originalName(fileFolder.getOriginalName())
                 .storedName(fileFolder.getStoredName())
                 .path(fileFolder.getPath())

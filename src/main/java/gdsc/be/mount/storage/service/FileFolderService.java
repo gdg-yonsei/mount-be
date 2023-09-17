@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -152,7 +153,7 @@ public class FileFolderService {
         log.debug("[updateFolderName] FileName: {}, NewFolderName : {}", originalFolderName, newFolderName);
 
         try {
-            // 1. DB 에서 파일 이름 업데이트 및 폴더 경로 수정
+            // 1. DB 에서 파일 이름 업데이트 및 폴더 경로 수정 (하나로 통합!!)
             fileFolder.updateOriginalName(newFolderName);
             fileFolder.updatePath(newFolderPath);
 
@@ -166,7 +167,13 @@ public class FileFolderService {
     }
 
     public FolderInfoResponse getFolderMetadata(Long folderId, String userName) {
-        return FolderInfoResponse.fromEntity(fileFolderRepository.findAllByIdAndUserName(folderId, userName));
+
+        // DB Connection 한 번에 처리하도록 쿼리문 수정 필요
+
+        FileFolder folder = fileFolderRepository.findAllByIdAndUserName(folderId, userName);
+        List<FileFolder> childFileFolders = fileFolderRepository.findChildrenByChildIds(folder.getChildIds());
+
+        return FolderInfoResponse.fromEntity(folder, childFileFolders);
     }
 
 
