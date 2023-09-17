@@ -51,7 +51,4 @@ async def download_file(file_name:str, user_id:str, db: Session = Depends(get_db
     if not has_file(file_name, user_id, db=db):
         raise HTTPException(status_code=404, detail="file doesn't exist")
     
-    allowed_file = get_file(file_name, user_id, db=db)
-    if allowed_file is None:
-        raise HTTPException(status_code=403, detail="permission denied")
-    return allowed_file
+    return get_file(file_name, user_id, db=db)
