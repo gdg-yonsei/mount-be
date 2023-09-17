@@ -153,9 +153,8 @@ public class FileFolderService {
         log.debug("[updateFolderName] FileName: {}, NewFolderName : {}", originalFolderName, newFolderName);
 
         try {
-            // 1. DB 에서 파일 이름 업데이트 및 폴더 경로 수정 (하나로 통합!!)
-            fileFolder.updateOriginalName(newFolderName);
-            fileFolder.updatePath(newFolderPath);
+            // 1. DB 에서 파일 이름 업데이트 및 폴더 경로 수정
+            fileFolder.updateOriginalNameAndPath(newFolderName, newFolderPath);
 
             // 2. 파일 시스템에서 파일 이름 업데이트
             updatePhysicalFolderName(originalFolderPath, newFolderPath);
