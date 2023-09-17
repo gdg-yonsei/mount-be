@@ -278,7 +278,7 @@ public class FileFolderService {
     파일 다운로드 관련 메서드
      */
 
-    private UrlResource getResource(String path) throws IOException {
+    UrlResource getResource(String path) throws IOException {
         Path filePath = Path.of(path);
         UrlResource resource = new UrlResource(filePath.toUri());
 

@@ -14,6 +14,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.UrlResource;
 import org.springframework.mock.web.MockMultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -29,7 +31,6 @@ public class FileFolderServiceTest {
 
     @InjectMocks
     private FileFolderService fileFolderService;
-
 
     // ================ 이후 테스트 고도화 작업 필요
     @Test
@@ -52,7 +53,7 @@ public class FileFolderServiceTest {
         // doNothing().when(fileFolder).transferTo(any(java.io.FileFolder.class));
 
         // When
-        FileUploadResponse response = fileFolderService.uploadFile(multipartFile, userName, 3L);
+        FileUploadResponse response = fileFolderService.uploadFile(multipartFile, userName, null);
 
         // Then
         assertNotNull(response);
@@ -70,14 +71,18 @@ public class FileFolderServiceTest {
 
     @Test
     @DisplayName("FileFolder download 테스트")
-    public void testDownloadFile() {
+    public void testDownloadFile() throws IOException {
         // Given
         Long fileId = 1L;
         String userName = "testUser";
 
         FileFolder fileFolder = createFileEntity();
 
+        // When
         when(fileFolderRepository.findById(fileId)).thenReturn(Optional.of(fileFolder));
+
+        when(fileFolderService.getResource(fileFolder.getPath()))
+                .thenReturn(new UrlResource("file://" + fileFolder.getPath()));
 
         // When
         FileDownloadResponse response = fileFolderService.downloadFile(fileId, userName);
@@ -95,7 +100,7 @@ public class FileFolderServiceTest {
         return FileFolder.builder()
             .fileFolderType(FileFolderType.FILE)
             .parentId(null)
-            .childId(null)
+            .childIds(null)
             .id(1L)
             .originalName("test.txt")
             .storedName("RANDOMRANDOM")
