@@ -169,7 +169,7 @@ public class FileFolderService {
 
         // 추후 수정 : DB Connection 한 번에 처리하도록 두 개의 서브 쿼리를 결합 (UNION)
 
-        FileFolder folder = fileFolderRepository.findAllByIdAndUserName(folderId, userName);
+        FileFolder folder = fileFolderRepository.findByIdAndUserName(folderId, userName);
         List<FileFolder> childFileFolders = fileFolderRepository.findChildrenByChildIds(folder.getChildIds());
 
         return FolderInfoResponse.fromEntity(folder, childFileFolders);

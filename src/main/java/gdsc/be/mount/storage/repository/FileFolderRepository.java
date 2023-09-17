@@ -11,7 +11,7 @@ import java.util.List;
 public interface FileFolderRepository extends JpaRepository<FileFolder, Long> {
     boolean existsByOriginalNameAndParentId(String folderName, Long parentId);
 
-    FileFolder findAllByIdAndUserName(Long folderId, String userName);
+    FileFolder findByIdAndUserName(Long folderId, String userName);
 
     @Query("SELECT ff FROM FileFolder ff WHERE ff.id IN :childIds")
     List<FileFolder> findChildrenByChildIds(List<Long> childIds);
