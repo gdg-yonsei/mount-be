@@ -22,6 +22,7 @@ public class FileFolder {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Enumerated(EnumType.STRING)
     private FileFolderType fileFolderType;
 
     private Long parentId; // 부모 폴더 id
