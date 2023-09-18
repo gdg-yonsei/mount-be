@@ -1,6 +1,10 @@
 package com.gdsc.mount.metadata.service;
 
+import com.gdsc.mount.common.domain.NodeType;
+import com.gdsc.mount.directory.domain.Directory;
+import com.gdsc.mount.directory.service.DirectoryService;
 import com.gdsc.mount.metadata.domain.Metadata;
+import com.gdsc.mount.metadata.dto.CreateMetadataRequest;
 import com.gdsc.mount.metadata.dto.MetadataResponse;
 import com.gdsc.mount.metadata.repository.MetadataRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +32,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MetadataService {
     private final MetadataRepository metadataRepository;
+    private final DirectoryService directoryService;
 
     public Metadata getMetadatabyId(String id) {
         return metadataRepository.findById(id)
@@ -45,7 +50,7 @@ public class MetadataService {
                 .collect(Collectors.toList());
     }
 
-    public String uploadFile(String fileName, MultipartFile file, String username) throws Exception {
+    public String uploadFile(MultipartFile file, CreateMetadataRequest request) throws Exception {
         Path uploadPath = Paths.get("uploads");
         if (!Files.exists(uploadPath)) {
             try {
@@ -55,12 +60,15 @@ public class MetadataService {
             }
         }
         String fileCode = RandomStringUtils.randomAlphanumeric(10);
+        Directory parentDirectory = directoryService.findParentDirectoryByPath(request.getPath());
+
+
         try (InputStream inputStream = file.getInputStream()) {
-            Path filePath = uploadPath.resolve(fileCode + "-" + fileName);
+            Path filePath = uploadPath.resolve(fileCode + "-" + request.getPath());
             Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
-            metadataRepository.save(new Metadata(fileCode, fileName, username, file.getContentType(), file.getSize(), "/download/" + fileCode));
+            metadataRepository.save(new Metadata(fileCode, parentDirectory, request.getPath(), request.isAtRoot(), request.getUsername(), file, "/download/" + fileCode));
         } catch (IOException e) {
-            throw new IOException("Failed to save file: " + fileName);
+            throw new IOException("Failed to save file: " + request.getName());
         }
         return fileCode;
     }
