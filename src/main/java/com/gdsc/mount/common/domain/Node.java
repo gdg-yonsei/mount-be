@@ -30,7 +30,7 @@ public class Node extends TimestampEntity {
 
     protected Node() {}
 
-    public Node(NodeType nodeType, String name, Directory parentDirectory, boolean atRoot) {
+    public Node(NodeType nodeType, String name, Directory parentDirectory, String path, boolean atRoot) {
         this.nodeType = nodeType;
         this.name = name;
         this.atRoot = atRoot;
