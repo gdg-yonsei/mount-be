@@ -30,12 +30,15 @@ public class Node extends TimestampEntity {
 
     protected Node() {}
 
-    public Node(NodeType nodeType, String name, Directory parentDirectory, String path, boolean atRoot) {
+    public Node(NodeType nodeType, String name, Directory parentDirectory, boolean atRoot) {
         this.nodeType = nodeType;
         this.name = name;
-        this.parentDirectory = parentDirectory;
-        this.path = path;
-        this.atRoot = atRoot;
+        if (atRoot) {
+            this.path = "/" + name;
+        } else {
+            this.path = parentDirectory.getPath() + "/" + name;
+            this.parentDirectory = parentDirectory;
+        }
     }
 
     public void setNotALeaf() {
