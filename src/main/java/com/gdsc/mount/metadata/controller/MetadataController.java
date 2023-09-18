@@ -2,6 +2,7 @@ package com.gdsc.mount.metadata.controller;
 
 
 import com.gdsc.mount.common.exception.ErrorResponse;
+import com.gdsc.mount.metadata.dto.CreateMetadataRequest;
 import com.gdsc.mount.metadata.dto.MetadataResponse;
 import com.gdsc.mount.metadata.service.MetadataService;
 import lombok.RequiredArgsConstructor;
@@ -40,10 +41,10 @@ public class MetadataController {
     // upload file
     @PostMapping("/upload")
     public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file,
-                                             @RequestParam("username") String username)
+                                             @RequestBody CreateMetadataRequest request)
             throws Exception {
-        String fileName = StringUtils.cleanPath(file.getOriginalFilename());
-        String fileCode = metadataService.uploadFile(fileName, file, username);
+        String fileName = StringUtils.cleanPath(request.getName());
+        String fileCode = metadataService.uploadFile(file, request);
         return ResponseEntity.status(201).body(fileCode);
     }
 
