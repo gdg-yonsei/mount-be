@@ -121,3 +121,68 @@
 
 ### 데이터베이스를 PostgreSQL 로 이동
 - Chilren Column 을 Array 형태로 저장하고자 했는데, sqlite 는 Array 형태의 column 을 지원하지 않았다. 그래서 데이터베이스를 PostgreSQL 을 사용했다. 
+
+-------
+## PR 리뷰 반영
+
+### Root 폴더 추가 로직 변경
+<Folder>
+- 회원 등록을 처음 했을 때, 자동으로 루트 폴더를 생성하면 되지 않겠나 ? 라는 피드백이 있었다. 루트 폴더를 사용자의 예약어로 생성하는 방식은 상당히 위험하다. 예약어를 두지 않고 자동으로 생성하는 방식으로 변경했다. 
+- `check_first_user` 를 통해 User Table 에 입력한 username 이 있는 유저가 있는지 확인한다. 만약 없으면 (= 새로운 유저이면), 자동으로 이름이 root 인 폴더를 생성한다. 
+- 만약 이미 유저가 존재한다면, 사용자가 입력한 대로 폴더를 생성한다. 
+<File>
+- 만약 새로운 유저가 파일을 업로드 한다면, root 폴더를 먼저 만들라고 403 Error 를 리턴한다. 
+
+### File, Folder 테이블 칼럼 수정 & User 테이블 생성
+- File, Folder 을 이미 구분하고 있음에도 is_folder 라는 칼럼을 두어 둘을 구분했다. 이것은 굳이 필요 없는 로직이라 생각하여 is_folder 칼럼을 삭제했다. 
+- 로그인 기능을 구현하지는 않았지만, 유저는 관리하기 위해 username 만 관리하는 테이블을 만들었다. 
+- 최종적인 테이블 칼럼은 아래와 같다. 
+
+  ```python
+  class Folders(Base):
+      __tablename__ = 'folders'
+      
+      id = Column(Integer, primary_key=True,index=True)
+      original_name = Column(String, nullable=False)
+      stored_name = Column(String, nullable=True)
+      uploader = Column(String, nullable=False)
+      uploaded_time = Column(String, nullable=False)
+      modified_time = Column(String, nullable=True)
+      parent_id = Column(Integer,ForeignKey('folders.id'), default = 1)
+      children = Column(ARRAY(String))
+
+  class Files(Base):
+      __tablename__ = 'files'
+      
+      id = Column(Integer, primary_key=True,index=True)
+      original_name = Column(String, nullable=False)
+      stored_name = Column(String, nullable=True)
+      file_size = Column(Integer, nullable=True)
+      uploader = Column(String, nullable=False)
+      uploaded_time = Column(String, nullable=False)
+      modified_time = Column(String, nullable=True)
+      parent_id = Column(Integer,ForeignKey('folders.id'), default = 1)
+      
+  class Users(Base):
+      __tablename__ = 'users'
+      
+      id = Column(Integer, primary_key=True,index=True)
+      username = Column(String, nullable=False)
+  ```
+
+### Controller / Service 분리
+- PR 리뷰에서 controller 에서 물리적으로 파일 저장, DB 저장 등 service 의 로직도 일부 포함되어 있다는 피드백을 받았다.
+- 그래서 DB 와 관련된 모든 로직은 Service 로 분리했다. 
+
+
+### 파일 삭제 시 , original_name 으로 삭제해도 괜찮은가 ?
+- 여러 유저가 동일한 파일의 이름을 올릴 수 있다. 이때 os.remove(original_name) 을 하게 되면 어느 유저가 올린 파일을 지울지 특정할 수 없다. 
+- 그래서 로컬에 저장할 때도 path 를 `uploads/{username}/file_name_{uuid}` 로 저장했다. os.remove 할 때도 저장했던 파일 경로를 이용해 삭제한다. 
+- 그렇지만 사실 유저당 동일한 파일 이름은 한 개만 올릴 수 있으므로, 로컬에서 파일 삭제 경로를 {username}/{file_name} 으로 하면 한 개로 특정된다. DB 에서도 (유저, 파일 이름) 쌍은 하나만 존재하므로 original_name 으로 삭제해도 무방하다. 
+- 하지만 추후에 같은 유저가 동일한 파일 이름을 여러 개 올릴 수 있다면, 내가 한 방식 처럼 original_name 말고 uuid 를 붙인 stored_name 을 찾아서 삭제하는 방식이 가장 정확할 것이다. 
+
+
+----------------------------------------------------------------
+## 질문 & 더 알아봐야 할 점 
+- Service / Controller 의 분리에서 HTTPException Error가 나게 하는 로직은 service 단에서 처리되야 하는가 ? 
+- 
