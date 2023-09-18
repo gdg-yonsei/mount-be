@@ -78,13 +78,14 @@ public class MetadataService {
     public Resource downloadFile(DownloadFileRequest request) throws IOException {
 
         Path foundFile = null;
-        Path path = Paths.get(request.getPath());
-        Metadata metadata = findByPath(request.getPath(), request.getFileName());
-
+        Metadata metadata = findByPath(request.getPath());
         checkFileOwner(request.getUsername(), metadata);
 
+        String pathWithoutTarget = request.getPath().substring(0, request.getPath().lastIndexOf("/"));
+        Path path = Paths.get(pathWithoutTarget);
+
         for (Path file : Files.list(path).collect(Collectors.toList())) {
-            if (file.getFileName().toString().startsWith(fileId)) {
+            if (file.getFileName().toString().startsWith(metadata.get_id())) {
                 foundFile = file;
             }
         }
