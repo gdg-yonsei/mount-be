@@ -5,6 +5,8 @@ import com.gdsc.mount.directory.domain.Directory;
 import com.gdsc.mount.directory.service.DirectoryService;
 import com.gdsc.mount.metadata.domain.Metadata;
 import com.gdsc.mount.metadata.dto.CreateMetadataRequest;
+import com.gdsc.mount.metadata.dto.DeleteFileRequest;
+import com.gdsc.mount.metadata.dto.DownloadFileRequest;
 import com.gdsc.mount.metadata.dto.MetadataResponse;
 import com.gdsc.mount.metadata.repository.MetadataRepository;
 import lombok.RequiredArgsConstructor;
@@ -51,7 +53,7 @@ public class MetadataService {
     }
 
     public String uploadFile(MultipartFile file, CreateMetadataRequest request) throws Exception {
-        Path uploadPath = Paths.get("uploads");
+        Path uploadPath = Paths.get(request.getPath());
         if (!Files.exists(uploadPath)) {
             try {
                 Files.createDirectories(uploadPath);
@@ -66,17 +68,20 @@ public class MetadataService {
         try (InputStream inputStream = file.getInputStream()) {
             Path filePath = uploadPath.resolve(fileCode + "-" + request.getPath());
             Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
-            metadataRepository.save(new Metadata(fileCode, parentDirectory, request.getPath(), request.isAtRoot(), request.getUsername(), file, "/download/" + fileCode));
+            metadataRepository.save(new Metadata(fileCode, request.getName(), parentDirectory, request.getPath(), request.isAtRoot(), request.getUsername(), file, "/download/" + fileCode));
         } catch (IOException e) {
             throw new IOException("Failed to save file: " + request.getName());
         }
         return fileCode;
     }
 
-    public Resource downloadFile(String username, String fileId) throws IOException {
-        checkFileOwner(username, fileId);
+    public Resource downloadFile(DownloadFileRequest request) throws IOException {
+
         Path foundFile = null;
         Path path = Paths.get("uploads");
+        Metadata metadata = findByPath(request.getPath(), request.getFileName());
+
+        checkFileOwner(request.getUsername(), request.getPath());
 
         for (Path file : Files.list(path).collect(Collectors.toList())) {
             if (file.getFileName().toString().startsWith(fileId)) {
@@ -84,24 +89,37 @@ public class MetadataService {
             }
         }
 
-
         if (foundFile != null) return new UrlResource(foundFile.toUri());
         return null;
     }
 
-    public boolean deleteFile(String username, String fileCode) throws IOException {
-        getMetadatabyId(fileCode);
-        File file = FileUtils.getFile("uploads/" + fileCode);
-        checkFileOwner(username, fileCode);
+    public boolean deleteFile(DeleteFileRequest request) throws IOException {
+        Metadata metadata = findByPath(request.getPath(), request.getFileName());
+        File file = FileUtils.getFile(request.getPath() + metadata.get_id());
+        checkFileOwner(request.getUsername(), metadata);
         boolean success = FileUtils.deleteQuietly(file);
-        metadataRepository.deleteById(fileCode);
+        metadataRepository.deleteById(metadata.get_id());
         return success;
     }
 
-    private void checkFileOwner(String username, String fileCode) throws IOException {
-        Metadata metadata = metadataRepository.findById(fileCode)
-                .orElseThrow(() -> new NoSuchElementException("No such file with given id."));
+    private void checkFileOwner(String username, Metadata metadata) throws IOException {
         if (!metadata.getUsername().equals(username)) throw new IOException("You are not the owner of this file.");
+    }
+
+    public Metadata findByPath(String path, String target) {
+        List<Metadata> metadataCandidates = metadataRepository.findAllByName(target);
+        if (metadataCandidates.isEmpty()) {
+            throw new NoSuchElementException("No metadata found with given name.");
+        } else if (metadataCandidates.size() == 1) {
+            return metadataCandidates.get(0);
+        } else {
+            for (Metadata metadataCandidate : metadataCandidates) {
+                if (metadataCandidate.getPath().equals(path)) {
+                    return metadataCandidate;
+                }
+            }
+            throw new NoSuchElementException("No metadata found with given name.");
+        }
     }
 
 }

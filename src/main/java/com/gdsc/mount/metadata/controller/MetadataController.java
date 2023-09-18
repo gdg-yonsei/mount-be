@@ -3,6 +3,7 @@ package com.gdsc.mount.metadata.controller;
 
 import com.gdsc.mount.common.exception.ErrorResponse;
 import com.gdsc.mount.metadata.dto.CreateMetadataRequest;
+import com.gdsc.mount.metadata.dto.DeleteFileRequest;
 import com.gdsc.mount.metadata.dto.MetadataResponse;
 import com.gdsc.mount.metadata.service.MetadataService;
 import lombok.RequiredArgsConstructor;
@@ -66,8 +67,9 @@ public class MetadataController {
 
     // delete file
     @DeleteMapping("/{fileId}")
-    public ResponseEntity<String> deleteFile(@RequestParam("username") String username, @PathVariable String fileId) throws Exception{
-        boolean success = metadataService.deleteFile(username, fileId);
+    public ResponseEntity<String> deleteFile(@PathVariable String fileId,
+                                             DeleteFileRequest request) throws Exception{
+        boolean success = metadataService.deleteFile(request);
         String body = success ? "success" : "fail";
         return ResponseEntity.status(204).body(body);
     }
