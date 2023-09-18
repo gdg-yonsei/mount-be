@@ -1,6 +1,3 @@
-import os
-import uuid
-from datetime import datetime
 from typing import Annotated
 
 import starlette.status as status
@@ -9,23 +6,17 @@ from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from model.models import Files
-from folder.service import update_children_file , get_folder
-from utils.utils import is_user
+from utils.utils import get_db
+from user.service import is_user, check_first_user
 from file.service import (
-    get_db,
-    get_uploaded_file,
-    check_existing_file,
-    save_file_to_db,
-    delete_file_from_db,
+    get_file,
+    save_file_data,
+    delete_file_data,
 )
-
-
 
 fileController = APIRouter(prefix="/file")
 
 db_dependency = Annotated[Session, Depends(get_db)]
-
-current_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
 """ 
 POST : Upload file and update parent folder's chilren
@@ -34,33 +25,18 @@ POST : Upload file and update parent folder's chilren
 async def upload_file(
     db: db_dependency, username: str, file: UploadFile,  parent_name: str = "root", 
 ) -> None:
-    unique_id = uuid.uuid4().hex
-    stored_name = f"{file.filename}_{unique_id}"
 
-    with open(file.filename, "wb") as f:
-        f.write(file.file.read())
 
-    existing_file = check_existing_file(db, file, username)
-
-    if existing_file:
-        raise HTTPException(status_code=409, detail="File already exists")
+    user = check_first_user(db,username)
+    if user:
+        existing_file = get_file(db, username, file.filename )
+        if existing_file:
+            raise HTTPException(status_code=409, detail="File already exists")
+        else:
+            save_file_data(db, file, username, parent_name)
+    else:
+        raise HTTPException(status_code=403 , detail = "Create Root Folder First")
     
-    parent_folder = get_folder(db, username, parent_name)
-
-    uploaded_file = Files(
-        original_name=file.filename,
-        stored_name=stored_name,
-        file_size=os.path.getsize(file.filename),
-        uploader=username,
-        uploaded_time=current_time,
-        modified_time=current_time,
-        is_folder=False,
-        parent_id=parent_folder.id,
-    )
-
-    update_children_file(db, parent_name, username, uploaded_file)
-
-    save_file_to_db(db, uploaded_file)
 
 
 """ 
@@ -71,12 +47,11 @@ async def delete_file(db: db_dependency, username: str, file_name: str) -> None:
     if not is_user(file_name, username, db):
         raise HTTPException(status_code=403, detail="Permission denied")
 
-    uploaded_file = get_uploaded_file(file_name, username, db)
-
+    uploaded_file = get_file(db, username, file_name)
     if not uploaded_file:
         raise HTTPException(status_code=404, detail="File not found")
 
-    delete_file_from_db(db, uploaded_file)
+    delete_file_data(db, username, uploaded_file)
 
 """ 
 GET : Download file
@@ -85,7 +60,7 @@ GET : Download file
 async def download_file(
     db: db_dependency, username: str, file_name: str
 ) -> FileResponse:
-    uploaded_file = get_uploaded_file(file_name, username, db)
+    uploaded_file = get_file(db, username, file_name)
     if not uploaded_file:
         raise HTTPException(status_code=404, detail="File not found")
 
