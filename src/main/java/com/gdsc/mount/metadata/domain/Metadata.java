@@ -2,6 +2,7 @@ package com.gdsc.mount.metadata.domain;
 
 import com.gdsc.mount.common.domain.Node;
 import com.gdsc.mount.common.domain.NodeType;
+import com.gdsc.mount.directory.domain.Directory;
 import lombok.Getter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -32,8 +33,8 @@ public class Metadata extends Node {
 
     protected Metadata() {}
 
-    public Metadata(String username, String name, String parentDirectoryId, String contentType, Long sizeInBytes, String downloadUri) {
-        super(NodeType.METADATA, name, parentDirectoryId);
+    public Metadata(NodeType nodeType, String name, Directory parentDirectory, String path, boolean atRoot, String username, String contentType, Long sizeInBytes, String downloadUri) {
+        super(nodeType, name, parentDirectory, path, atRoot);
         this.username = username;
         this.contentType = contentType;
         this.sizeInBytes = sizeInBytes;
