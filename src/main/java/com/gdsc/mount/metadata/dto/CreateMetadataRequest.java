@@ -9,8 +9,7 @@ import lombok.RequiredArgsConstructor;
 public class CreateMetadataRequest  {
     private String name;
     private String username;
-    private String parentDirectoryId;
-    private String downloadUri;
+    private String path;
     private boolean atRoot;
 
     protected CreateMetadataRequest() {}
