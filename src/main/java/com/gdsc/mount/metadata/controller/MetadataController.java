@@ -76,32 +76,4 @@ public class MetadataController {
         return ResponseEntity.status(204).body(body);
     }
 
-    @ExceptionHandler(NoSuchElementException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ResponseEntity<ErrorResponse> handleNoSuchElementFoundException(
-            NoSuchElementException exception, WebRequest request
-    ) {
-        ErrorResponse response = ErrorResponse.of(
-                exception,
-                "No such element exists.",
-                HttpStatus.NOT_FOUND,
-                request
-        );
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-    }
-
-    @ExceptionHandler(IOException.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ResponseEntity<ErrorResponse> handleIOException(
-            IOException exception
-    ) {
-        ErrorResponse response = ErrorResponse.of(
-                exception,
-                exception.getMessage(),
-                HttpStatus.INTERNAL_SERVER_ERROR,
-                null
-        );
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-    }
-
 }
