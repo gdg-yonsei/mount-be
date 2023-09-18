@@ -87,6 +87,10 @@ def check_and_get_items_metadata(user_id:str, folder_path:str, folder_name:str, 
         .filter(Folder.parent_id == parent_id).filter(Folder.folder_name == folder_name).first().folder_id
     
     child_folder = db.query(Folder.folder_name).filter(Folder.parent_id == folder_id).all()
-    content = {idx: row._data for idx, row in enumerate(child_folder)}
+    content = {'folder': [row._data for row in child_folder]}
+    
     # 파일 검색
+    child_file = db.query(File.file_name).filter(File.folder_id == folder_id).all()
+    content.update({'file': [row._data for row in child_file]})
+
     return JSONResponse(content = content)
