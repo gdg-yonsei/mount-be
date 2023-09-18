@@ -77,21 +77,12 @@ public class MetadataService {
 
     public Resource downloadFile(DownloadFileRequest request) throws IOException {
 
-        Path foundFile = null;
         Metadata metadata = findByPath(request.getPath());
         checkFileOwner(request.getUsername(), metadata);
 
-        String pathWithoutTarget = request.getPath().substring(0, request.getPath().lastIndexOf("/"));
-        Path path = Paths.get(pathWithoutTarget);
+        Path foundFile = Paths.get(request.getPath());
 
-        for (Path file : Files.list(path).collect(Collectors.toList())) {
-            if (file.getFileName().toString().startsWith(metadata.get_id())) {
-                foundFile = file;
-            }
-        }
-
-        if (foundFile != null) return new UrlResource(foundFile.toUri());
-        return null;
+        return new UrlResource(foundFile.toUri());
     }
 
     public boolean deleteFile(DeleteFileRequest request) throws IOException {
