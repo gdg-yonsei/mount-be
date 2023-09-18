@@ -3,7 +3,6 @@ package com.gdsc.mount.metadata.domain;
 import com.gdsc.mount.common.domain.Node;
 import com.gdsc.mount.common.domain.NodeType;
 import com.gdsc.mount.directory.domain.Directory;
-import com.gdsc.mount.metadata.dto.CreateMetadataRequest;
 import lombok.Getter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;

@@ -81,7 +81,7 @@ public class MetadataService {
         Path path = Paths.get("uploads");
         Metadata metadata = findByPath(request.getPath(), request.getFileName());
 
-        checkFileOwner(request.getUsername(), request.getPath());
+        checkFileOwner(request.getUsername(), metadata);
 
         for (Path file : Files.list(path).collect(Collectors.toList())) {
             if (file.getFileName().toString().startsWith(fileId)) {

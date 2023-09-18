@@ -17,7 +17,6 @@ public class Directory extends Node {
     @DBRef
     private List<Node> children = new ArrayList<>();
 
-
     public Directory() {}
 
     public Directory(String name, Directory parentDirectory, String path, boolean atRoot) {
