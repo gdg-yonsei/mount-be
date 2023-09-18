@@ -35,12 +35,14 @@ public class Metadata extends Node {
 
     protected Metadata() {}
 
-    public Metadata(String name, Directory parentDirectory, String path, boolean atRoot, String username, MultipartFile file, String downloadUri) {
+    public Metadata(String _id, String name, Directory parentDirectory, String path, boolean atRoot, String username, MultipartFile file, String downloadUri) {
         super(NodeType.METADATA, name, parentDirectory, path, atRoot);
+        this._id = _id;
         this.username = username;
         this.contentType = file.getContentType();
         this.sizeInBytes = file.getSize();
         this.downloadUri = downloadUri;
     }
+
 
 }
