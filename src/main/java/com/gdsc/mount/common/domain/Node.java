@@ -1,5 +1,6 @@
 package com.gdsc.mount.common.domain;
 
+import com.gdsc.mount.directory.domain.Directory;
 import lombok.Getter;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -15,8 +16,8 @@ public class Node extends TimestampEntity {
     @NotNull
     private String name;
 
-    @Field(name = "parent_directory_id")
-    private String parentDirectoryId;
+    @Field(name = "parent_directory")
+    private Directory parentDirectory;
 
     @Field(name = "path")
     private String path;
@@ -25,16 +26,19 @@ public class Node extends TimestampEntity {
     private boolean atRoot;
 
     @Field(name = "is_a_leaf")
-    private boolean isALeaf;
+    private boolean isALeaf = true;
 
     protected Node() {}
 
-    public Node(NodeType nodeType, String name, String parentDirectoryId, String path, boolean atRoot, boolean isALeaf) {
+    public Node(NodeType nodeType, String name, Directory parentDirectory, String path, boolean atRoot) {
         this.nodeType = nodeType;
         this.name = name;
-        this.parentDirectoryId = parentDirectoryId;
+        this.parentDirectory = parentDirectory;
         this.path = path;
         this.atRoot = atRoot;
-        this.isALeaf = isALeaf;
+    }
+
+    public void setNotALeaf() {
+        this.isALeaf = false;
     }
 }
