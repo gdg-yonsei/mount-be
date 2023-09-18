@@ -10,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 @AllArgsConstructor
 public class DirectoryCreateRequest {
     private String name;
-    private String parentDirectoryId;
+    private String path;
 
     public DirectoryCreateRequest() {}
 }
