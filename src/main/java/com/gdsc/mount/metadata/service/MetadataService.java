@@ -75,21 +75,23 @@ public class MetadataService {
                 foundFile = file;
             }
         }
+
+
         if (foundFile != null) return new UrlResource(foundFile.toUri());
         return null;
     }
 
-    public boolean deleteFile(String username, String fileId) throws IOException {
-        getMetadatabyId(fileId);
-        File file = FileUtils.getFile("uploads/" + fileId);
-        checkFileOwner(username, fileId);
+    public boolean deleteFile(String username, String fileCode) throws IOException {
+        getMetadatabyId(fileCode);
+        File file = FileUtils.getFile("uploads/" + fileCode);
+        checkFileOwner(username, fileCode);
         boolean success = FileUtils.deleteQuietly(file);
-        metadataRepository.deleteById(fileId);
+        metadataRepository.deleteById(fileCode);
         return success;
     }
 
-    private void checkFileOwner(String username, String fileId) throws IOException {
-        Metadata metadata = metadataRepository.findById(fileId)
+    private void checkFileOwner(String username, String fileCode) throws IOException {
+        Metadata metadata = metadataRepository.findById(fileCode)
                 .orElseThrow(() -> new NoSuchElementException("No such file with given id."));
         if (!metadata.getUsername().equals(username)) throw new IOException("You are not the owner of this file.");
     }
