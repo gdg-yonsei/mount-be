@@ -33,6 +33,7 @@ public class Node extends TimestampEntity {
     public Node(NodeType nodeType, String name, Directory parentDirectory, boolean atRoot) {
         this.nodeType = nodeType;
         this.name = name;
+        this.atRoot = atRoot;
         if (atRoot) {
             this.path = "/" + name;
         } else {
