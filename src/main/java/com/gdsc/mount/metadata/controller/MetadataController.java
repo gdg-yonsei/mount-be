@@ -4,6 +4,7 @@ package com.gdsc.mount.metadata.controller;
 import com.gdsc.mount.common.exception.ErrorResponse;
 import com.gdsc.mount.metadata.dto.CreateMetadataRequest;
 import com.gdsc.mount.metadata.dto.DeleteFileRequest;
+import com.gdsc.mount.metadata.dto.DownloadFileRequest;
 import com.gdsc.mount.metadata.dto.MetadataResponse;
 import com.gdsc.mount.metadata.service.MetadataService;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import javax.validation.Valid;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -42,7 +44,7 @@ public class MetadataController {
     // upload file
     @PostMapping("/upload")
     public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file,
-                                             @RequestBody CreateMetadataRequest request)
+                                             @RequestBody @Valid CreateMetadataRequest request)
             throws Exception {
         String fileName = StringUtils.cleanPath(request.getName());
         String fileCode = metadataService.uploadFile(file, request);
@@ -50,11 +52,11 @@ public class MetadataController {
     }
 
     // download file
-    @GetMapping("/download/{fileId}")
-    public ResponseEntity<?> downloadFile(@RequestParam("username") String username, @PathVariable String fileId) {
+    @GetMapping("/download")
+    public ResponseEntity<?> downloadFile(@RequestBody @Valid DownloadFileRequest request) {
         Resource resource;
         try {
-            resource = metadataService.downloadFile(username, fileId);
+            resource = metadataService.downloadFile(request);
         } catch (Exception e) {
             return ResponseEntity.status(500).body(e.getMessage());
         }
@@ -68,7 +70,7 @@ public class MetadataController {
     // delete file
     @DeleteMapping("/{fileId}")
     public ResponseEntity<String> deleteFile(@PathVariable String fileId,
-                                             DeleteFileRequest request) throws Exception{
+                                             @RequestBody @Valid DeleteFileRequest request) throws Exception{
         boolean success = metadataService.deleteFile(request);
         String body = success ? "success" : "fail";
         return ResponseEntity.status(204).body(body);
