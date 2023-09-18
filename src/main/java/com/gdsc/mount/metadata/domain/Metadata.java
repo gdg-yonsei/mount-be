@@ -3,11 +3,13 @@ package com.gdsc.mount.metadata.domain;
 import com.gdsc.mount.common.domain.Node;
 import com.gdsc.mount.common.domain.NodeType;
 import com.gdsc.mount.directory.domain.Directory;
+import com.gdsc.mount.metadata.dto.CreateMetadataRequest;
 import lombok.Getter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.NotNull;
 
@@ -33,11 +35,12 @@ public class Metadata extends Node {
 
     protected Metadata() {}
 
-    public Metadata(String name, Directory parentDirectory, String path, boolean atRoot, String username, String contentType, Long sizeInBytes, String downloadUri) {
+    public Metadata(String name, Directory parentDirectory, String path, boolean atRoot, String username, MultipartFile file, String downloadUri) {
         super(NodeType.METADATA, name, parentDirectory, path, atRoot);
         this.username = username;
-        this.contentType = contentType;
-        this.sizeInBytes = sizeInBytes;
+        this.contentType = file.getContentType();
+        this.sizeInBytes = file.getSize();
         this.downloadUri = downloadUri;
     }
+
 }
