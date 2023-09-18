@@ -3,6 +3,7 @@ import uvicorn
 
 from file.controller import fileController
 from folder.controller import folderController
+from user.controller import userController
 
 import model.models as models
 from model.database import engine
@@ -14,6 +15,7 @@ models.Base.metadata.create_all(bind=engine)
 
 app.include_router(fileController)
 app.include_router(folderController)
+app.include_router(userController)
 
 
 if __name__ == '__main__':
