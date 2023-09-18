@@ -78,7 +78,7 @@ public class MetadataService {
     public Resource downloadFile(DownloadFileRequest request) throws IOException {
 
         Path foundFile = null;
-        Path path = Paths.get("uploads");
+        Path path = Paths.get(request.getPath());
         Metadata metadata = findByPath(request.getPath(), request.getFileName());
 
         checkFileOwner(request.getUsername(), metadata);
@@ -94,32 +94,23 @@ public class MetadataService {
     }
 
     public boolean deleteFile(DeleteFileRequest request) throws IOException {
-        Metadata metadata = findByPath(request.getPath(), request.getFileName());
-        File file = FileUtils.getFile(request.getPath() + metadata.get_id());
+        Metadata metadata = findByPath(request.getPath());
+        String pathWithoutTarget = request.getPath().substring(0, request.getPath().lastIndexOf("/"));
         checkFileOwner(request.getUsername(), metadata);
+        File file = FileUtils.getFile(pathWithoutTarget + metadata.get_id());
         boolean success = FileUtils.deleteQuietly(file);
         metadataRepository.deleteById(metadata.get_id());
         return success;
     }
 
+
     private void checkFileOwner(String username, Metadata metadata) throws IOException {
         if (!metadata.getUsername().equals(username)) throw new IOException("You are not the owner of this file.");
     }
 
-    public Metadata findByPath(String path, String target) {
-        List<Metadata> metadataCandidates = metadataRepository.findAllByName(target);
-        if (metadataCandidates.isEmpty()) {
-            throw new NoSuchElementException("No metadata found with given name.");
-        } else if (metadataCandidates.size() == 1) {
-            return metadataCandidates.get(0);
-        } else {
-            for (Metadata metadataCandidate : metadataCandidates) {
-                if (metadataCandidate.getPath().equals(path)) {
-                    return metadataCandidate;
-                }
-            }
-            throw new NoSuchElementException("No metadata found with given name.");
-        }
+    public Metadata findByPath(String path) {
+        return metadataRepository.findByPath(path)
+                .orElseThrow(() -> new NoSuchElementException("No metadata found with given path."));
     }
 
 }
