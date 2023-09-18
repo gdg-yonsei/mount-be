@@ -33,8 +33,8 @@ public class Metadata extends Node {
 
     protected Metadata() {}
 
-    public Metadata(NodeType nodeType, String name, Directory parentDirectory, String path, boolean atRoot, String username, String contentType, Long sizeInBytes, String downloadUri) {
-        super(nodeType, name, parentDirectory, path, atRoot);
+    public Metadata(String name, Directory parentDirectory, String path, boolean atRoot, String username, String contentType, Long sizeInBytes, String downloadUri) {
+        super(NodeType.METADATA, name, parentDirectory, path, atRoot);
         this.username = username;
         this.contentType = contentType;
         this.sizeInBytes = sizeInBytes;
