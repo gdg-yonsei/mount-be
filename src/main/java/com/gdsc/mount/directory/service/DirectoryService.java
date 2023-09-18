@@ -16,12 +16,12 @@ public class DirectoryService {
 
     public void createDirectory(DirectoryCreateRequest request) {
         Directory directory;
-        if (request.getParentDirectoryId() != null) {
-            Directory parentDirectory = findDirectoryById(request.getParentDirectoryId());
+        if (request.getPath() == null || request.getPath().isEmpty() || request.getPath().equals("/")) {
+            directory = new Directory(request.getName(), null, "/" + request.getName(), true);
+        } else {
+            Directory parentDirectory = findParentDirectoryByPath(request.getPath());
             directory = new Directory(request.getName(), parentDirectory, parentDirectory.getPath() + "/" + request.getName(), false);
             parentDirectory.addDirectory(directory);
-        } else {
-            directory = new Directory(request.getName(), null, "/" + request.getName(), true);
         }
         directoryRepository.save(directory);
     }
