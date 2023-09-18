@@ -28,7 +28,7 @@ public class DirectoryService {
 
     public Directory findDirectoryById(String directoryId) {
         return directoryRepository.findById(directoryId)
-                .orElseThrow(() -> new NoSuchElementException("No directory found with id: " + parentDirectoryId));
+                .orElseThrow(() -> new NoSuchElementException("No directory found with id: " + directoryId));
     }
 
     public Directory findParentDirectoryByPath(String path) {
