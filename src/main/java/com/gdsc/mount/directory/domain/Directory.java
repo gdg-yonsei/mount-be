@@ -32,4 +32,12 @@ public class Directory extends Node {
         children.add(metadata);
     }
 
+    public void removeMetadata(Metadata metadata) {
+        children.remove(metadata);
+    }
+
+    public void removeDirectory(Directory directory) {
+        children.remove(directory);
+    }
+
 }
