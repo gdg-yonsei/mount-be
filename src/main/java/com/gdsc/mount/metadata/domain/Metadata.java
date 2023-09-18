@@ -1,28 +1,24 @@
 package com.gdsc.mount.metadata.domain;
 
+import com.gdsc.mount.common.domain.Node;
+import com.gdsc.mount.common.domain.NodeType;
 import lombok.Getter;
-import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import javax.validation.constraints.NotNull;
-import java.time.Instant;
 
 @Document(collection = "metadata")
 @Getter
-public class Metadata {
+public class Metadata extends Node {
     @Id
     private String _id;
 
     @NotNull
-    @Field(name = "file_name")
-    private String fileName;
-
-    @NotNull
     @Field(name = "username")
+    @Indexed(unique = true)
     private String username;
 
     @Field(name = "content_type")
@@ -34,17 +30,10 @@ public class Metadata {
     @Field(name = "download_uri")
     private String downloadUri;
 
-    @CreatedDate
-    private Instant createdAt;
-
-    @LastModifiedDate
-    private Instant updatedAt;
-
     protected Metadata() {}
 
-    public Metadata(String fileId, String fileName, String username, String contentType, Long sizeInBytes, String downloadUri) {
-        this._id = fileId;
-        this.fileName = fileName;
+    public Metadata(String username, String name, String parentDirectoryId, String contentType, Long sizeInBytes, String downloadUri) {
+        super(NodeType.METADATA, name, parentDirectoryId);
         this.username = username;
         this.contentType = contentType;
         this.sizeInBytes = sizeInBytes;
