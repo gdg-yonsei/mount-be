@@ -186,5 +186,5 @@
 
 ----------------------------------------------------------------
 ## 질문 & 더 알아봐야 할 점 
-- Service / Controller 의 분리에서 HTTPException Error가 나게 하는 로직은 service 단에서 처리되야 하는가 ? 
-- 
+- Service / Controller 의 분리에서 HTTPException Error가 나게 하는 로직은 Controller 단에서 처리되야 하는가 ? 
+  - HTTPException Error 는 DB, 정보 처리와는 관련이 없어서 우선 controller 에서 모두 처리했다. 
