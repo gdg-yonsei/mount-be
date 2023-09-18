@@ -34,18 +34,27 @@ public class DirectoryService {
     public Directory findParentDirectoryByPath(String path) {
         String[] pathParts = path.split("/");
         String parentName = pathParts[pathParts.length - 2];
-        List<Directory> parentCandidates = directoryRepository.findAllByName(parentName);
-        if (parentCandidates.isEmpty()) {
-            throw new NoSuchElementException("No parent directory found with given name.");
-        } else if (parentCandidates.size() == 1) {
-            return parentCandidates.get(0);
+        return findByPath(path, parentName);
+    }
+
+    public Directory findDirectoryByPath(String path) {
+        String fileName = path.substring(path.lastIndexOf("/") + 1);
+        return findByPath(path, fileName);
+    }
+
+    public Directory findByPath(String path, String target) {
+        List<Directory> directoryCandidates = directoryRepository.findAllByName(target);
+        if (directoryCandidates.isEmpty()) {
+            throw new NoSuchElementException("No directory found with given name.");
+        } else if (directoryCandidates.size() == 1) {
+            return directoryCandidates.get(0);
         } else {
-            for (Directory parentCandidate : parentCandidates) {
-                if (parentCandidate.getPath().equals(path.substring(0, path.lastIndexOf("/")))) {
-                    return parentCandidate;
+            for (Directory directoryCandidate : directoryCandidates) {
+                if (directoryCandidate.getPath().equals(path)) {
+                    return directoryCandidate;
                 }
             }
-            throw new NoSuchElementException("No parent directory found with given name.");
+            throw new NoSuchElementException("No directory found with given name.");
         }
     }
 }
