@@ -35,7 +35,7 @@ public class DirectoryService {
         String[] pathParts = path.split("/");
         String parentName = pathParts[pathParts.length - 2];
         List<Directory> parentCandidates = directoryRepository.findAllByName(parentName);
-        if (parentCandidates.size() == 0) {
+        if (parentCandidates.isEmpty()) {
             throw new NoSuchElementException("No parent directory found with given name.");
         } else if (parentCandidates.size() == 1) {
             return parentCandidates.get(0);
