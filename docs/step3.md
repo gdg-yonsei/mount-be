@@ -150,3 +150,131 @@
 **단점**
 - 저장하기는 쉬우나, 삭제 요청을 할 때, 모든 파일 / 폴더의 parent_id 를 다 검색해야 하므로 연산량이 많다. 
 - 이것을 개선한 방식이 삭제하고자 하는 폴더의 id 이후에 있는 id 부터 찾는 방식이다. 
+
+**실행결과**
+- 삭제 전
+  - 폴더 구조
+    |- root 
+    |----folder1
+    |       |----folder1-1
+    |       |        |----test1.txt
+    |       |----test2.txt
+    |----folder2
+    |----test3.txt 
+  - folder
+    ```json
+    [
+      {
+        "uploaded_time": "2023-09-20T00:35:46",
+        "original_name": "root",
+        "stored_name": "root",
+        "parent_id": 0,
+        "uploader": "soeun",
+        "id": 55,
+        "modified_time": "2023-09-20T00:35:46"
+      },
+      {
+        "uploaded_time": "2023-09-20T00:35:46",
+        "original_name": "folder1",
+        "stored_name": "folder1",
+        "parent_id": 55,
+        "uploader": "soeun",
+        "id": 56,
+        "modified_time": "2023-09-20T00:35:46"
+      },
+      {
+        "uploaded_time": "2023-09-20T00:35:46",
+        "original_name": "folder1-1",
+        "stored_name": "folder1-1",
+        "parent_id": 56,
+        "uploader": "soeun",
+        "id": 57,
+        "modified_time": "2023-09-20T00:35:46"
+      },
+      {
+        "uploaded_time": "2023-09-20T00:35:46",
+        "original_name": "folder2",
+        "stored_name": "folder2",
+        "parent_id": 55,
+        "uploader": "soeun",
+        "id": 58,
+        "modified_time": "2023-09-20T00:35:46"
+      }
+    ]
+
+    ```
+  - file
+    ```json
+    [
+      {
+        "file_size": 6,
+        "id": 42,
+        "uploaded_time": "2023-09-20T00:35:46",
+        "parent_id": 57,
+        "original_name": "test1.txt",
+        "stored_name": "test1.txt_005a4e8790fd407186238e9ad0c49fa3",
+        "uploader": "soeun",
+        "modified_time": "2023-09-20T00:35:46"
+      },
+      {
+        "file_size": 6,
+        "id": 43,
+        "uploaded_time": "2023-09-20T00:35:46",
+        "parent_id": 56,
+        "original_name": "test2.txt",
+        "stored_name": "test2.txt_05a0e4a58c3f43af8de7c66d962e0b1e",
+        "uploader": "soeun",
+        "modified_time": "2023-09-20T00:35:46"
+      },
+      {
+        "file_size": 6,
+        "id": 44,
+        "uploaded_time": "2023-09-20T00:35:46",
+        "parent_id": 55,
+        "original_name": "test3.txt",
+        "stored_name": "test3.txt_34b6b483ef654488b396c75718ffae19",
+        "uploader": "soeun",
+        "modified_time": "2023-09-20T00:35:46"
+      }
+    ]
+    ```
+- folder 1 삭제 후
+  - folder
+    ```json
+    [
+      {
+        "uploaded_time": "2023-09-20T00:35:46",
+        "original_name": "root",
+        "stored_name": "root",
+        "parent_id": 0,
+        "uploader": "soeun",
+        "id": 55,
+        "modified_time": "2023-09-20T00:35:46"
+      },
+      {
+        "uploaded_time": "2023-09-20T00:35:46",
+        "original_name": "folder2",
+        "stored_name": "folder2",
+        "parent_id": 55,
+        "uploader": "soeun",
+        "id": 58,
+        "modified_time": "2023-09-20T00:35:46"
+      }
+    ]
+    ```
+  - file
+    ```json
+    [
+      {
+        "file_size": 6,
+        "id": 44,
+        "uploaded_time": "2023-09-20T00:35:46",
+        "parent_id": 55,
+        "original_name": "test3.txt",
+        "stored_name": "test3.txt_34b6b483ef654488b396c75718ffae19",
+        "uploader": "soeun",
+        "modified_time": "2023-09-20T00:35:46"
+      }
+    ]
+    ```
+  
