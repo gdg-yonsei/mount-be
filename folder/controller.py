@@ -7,8 +7,9 @@ from utils.utils import get_db
 from folder.service import (
     get_folder_by_name,
     create_new_folder,
-    update_folder_info,
-    delete_folder_info
+    update_folder_data,
+    delete_folder_data,
+    move_folder_data
 )
 
 folderController = APIRouter(prefix="/folder")
@@ -71,15 +72,33 @@ async def update_folder(
     if not existing_folder:
         raise HTTPException(status_code=404, detail="Folder Not Found")
 
-    update_folder_info(db, existing_folder, new_folder_name)
+    update_folder_data(db, existing_folder, new_folder_name)
 
     return {
         "message": f"Folder name updated from {existing_folder_name} to {new_folder_name}"
     }
 
+"""
+DELETE : Delete Folder and all files & folders below
+"""
 @folderController.delete("/{username}/delete")
 async def delete_folder(db: db_dependency, username: str, folder_name : str):
-    delete_folder_info(db, username, folder_name)
+    if folder_name == "root":
+        raise HTTPException(status_code=403, detail="Cannot Delete Root Folder")
+    
+    delete_folder_data(db, username, folder_name)
+    
     return {
         "message": f"{folder_name} deleted"
+    }
+
+"""
+PUT : Move Folder to another Folder
+"""
+@folderController.put("/{username}/move")
+async def move_folder(db: db_dependency, username: str, folder_name : str, move_to_folder_name : str):
+    move_folder_data(db, username, folder_name, move_to_folder_name)
+    
+    return {
+        "message": f"{folder_name} moved to {move_to_folder_name}"
     }

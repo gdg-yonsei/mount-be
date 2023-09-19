@@ -10,10 +10,26 @@ from utils.utils import get_db, get_current_time
 from user.service import check_first_user, add_user
 
 
-        
 db_dependency = Annotated[Session, Depends(get_db)]
 
 current_time = get_current_time()
+
+def get_folder_by_name(db, username, folder_name):
+    folder = db.query(Folders).filter(
+        Folders.uploader == username,
+        Folders.original_name == folder_name
+        ).first()
+    return folder
+
+def get_folder_by_id(db, folder_id):
+    folder = db.query(Folders).filter(
+        Folders.id == folder_id
+        ).first()
+    return folder
+
+def save_folder(db, new_folder):
+    db.add(new_folder)
+    db.commit()
 
 def create_root_folder(db, username):
     root_folder = Folders(
@@ -46,34 +62,11 @@ def create_new_folder(db, folder_name, username, parent_name):
             modified_time=current_time,
             parent_id= parent_folder.id
         )
-        
-    
         save_folder(db, new_folder)
     return new_folder
     
 
-
-def get_folder_by_name(db, username, folder_name):
-    folder = db.query(Folders).filter(
-        Folders.uploader == username,
-        Folders.original_name == folder_name
-        ).first()
-    return folder
-
-def get_folder_by_id(db, folder_id):
-    folder = db.query(Folders).filter(
-        Folders.id == folder_id
-        ).first()
-    return folder
-
-
-    
-def save_folder(db, new_folder):
-    db.add(new_folder)
-    db.commit()
-
-
-def update_folder_info(db, existing_folder, new_folder_name):
+def update_folder_data(db, existing_folder, new_folder_name):
     
     existing_folder.original_name = new_folder_name
     existing_folder.stored_name = new_folder_name
@@ -81,7 +74,7 @@ def update_folder_info(db, existing_folder, new_folder_name):
 
     db.commit()
     
-def delete_folder_info(db, username, folder_name):
+def delete_folder_data(db, username, folder_name):
     from file.service import delete_file_data
     
     parent_folder = get_folder_by_name(db, username, folder_name)
@@ -97,8 +90,22 @@ def delete_folder_info(db, username, folder_name):
         Folders.parent_id == parent_folder.id
     ).all()
     for item in child_folders:
-        delete_folder_info(db, username, item.original_name)
+        delete_folder_data(db, username, item.original_name)
         
+    parent_folder.modified_time = current_time
+    flag_modified(parent_folder, "modified_time")
+    
     db.delete(parent_folder)
     db.commit()
     
+def move_folder_data(db, username, folder_name, move_to_folder_name):
+    parent_folder = get_folder_by_name(db, username, move_to_folder_name)
+    folder = get_folder_by_name(db, username, folder_name)
+    
+    folder.parent_id = parent_folder.id
+    parent_folder.modified_time = current_time
+    
+    flag_modified(folder, "parent_id")
+    flag_modified(parent_folder, "modified_time")
+    
+    db.commit()
