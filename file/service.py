@@ -1,5 +1,6 @@
 import os
 import uuid
+from sqlalchemy.orm.attributes import flag_modified
 from model.models import Files
 from utils.utils import get_current_time
 from folder.service import get_folder_by_name
@@ -66,3 +67,14 @@ def delete_file_data(db , username, file_name):
     db.commit()
 
 
+def move_file_data(db, username, file_name, move_to_folder_name):
+    parent_folder = get_folder_by_name(db, username, move_to_folder_name)
+    file = get_file(db, username, file_name)
+    
+    file.parent_id = parent_folder.id
+    parent_folder.modified_time = current_time
+    
+    flag_modified(file, "parent_id")
+    flag_modified(parent_folder, "modified_time")
+    
+    db.commit()

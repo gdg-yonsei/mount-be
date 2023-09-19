@@ -12,6 +12,7 @@ from file.service import (
     get_file,
     save_file_data,
     delete_file_data,
+    move_file_data
 )
 
 fileController = APIRouter(prefix="/file")
@@ -86,3 +87,14 @@ async def get_user_files(db: db_dependency, username: str):
         .filter(Files.uploader == username)
         .all()
     )
+
+"""
+PUT : Move File to another Folder
+"""
+@fileController.put("/{username}/move")
+async def move_file(db: db_dependency, username: str, file_name : str, move_to_folder_name : str):
+    move_file_data(db, username, file_name, move_to_folder_name)
+    
+    return {
+        "message": f"{file_name} moved to {move_to_folder_name}"
+    }
