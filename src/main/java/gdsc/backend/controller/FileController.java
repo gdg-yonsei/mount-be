@@ -30,9 +30,9 @@ public class FileController {
 
     // 파일 업로드
     @PostMapping("/uploadFile")
-    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file, @RequestParam("userId") String userId) throws IllegalStateException, IOException {
+    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file, @RequestParam("userId") String userId, @RequestParam("parentFolderId") Long parentFolderId) throws IllegalStateException, IOException {
         try {
-            storageService.store(file, userId);
+            storageService.store(file, userId, parentFolderId);
             return ResponseEntity.ok().body("File uploaded successfully! -> filename = " + file.getOriginalFilename());
         } catch (StorageException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Fail to upload file" + file.getOriginalFilename());

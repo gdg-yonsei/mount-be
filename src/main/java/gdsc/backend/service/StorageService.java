@@ -12,7 +12,7 @@ public interface StorageService {
 
     void initUploadPath(Path root);
 
-    void store(MultipartFile file, String userId);
+    void store(MultipartFile file, String userId, Long parentFolderId);
 
     Resource download(Long fileId, String userId) throws FileNotFoundException, UnauthorizedAccessException;
 

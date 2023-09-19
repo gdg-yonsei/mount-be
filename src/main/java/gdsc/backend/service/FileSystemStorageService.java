@@ -2,9 +2,11 @@ package gdsc.backend.service;
 
 
 import gdsc.backend.domain.FileMetaData;
+import gdsc.backend.domain.Folder;
 import gdsc.backend.exception.StorageException;
 import gdsc.backend.exception.UnauthorizedAccessException;
 import gdsc.backend.repository.FileMetadataRepository;
+import gdsc.backend.repository.FolderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -29,6 +31,7 @@ import java.util.UUID;
 public class FileSystemStorageService implements StorageService {
 
     private final FileMetadataRepository fileMetadataRepository;
+    private final FolderRepository folderRepository;
 
     @Value("${spring.servlet.multipart.location}")
     private String uploadPath;
@@ -45,7 +48,7 @@ public class FileSystemStorageService implements StorageService {
 
     @Override
     @Transactional
-    public void store(MultipartFile file, String userId) {
+    public void store(MultipartFile file, String userId, Long parentFolderId) {
         try {
             if (file.isEmpty()) {
                 throw new StorageException("Failed to store empty file " + file.getOriginalFilename());
@@ -54,10 +57,18 @@ public class FileSystemStorageService implements StorageService {
             String originalFileName = file.getOriginalFilename();
             String saveFileName = getSaveFileName(userId, originalFileName);
 
+            // parentFolder 설정 : null(root) or Folder
+            Folder parentFolder = null;
+            if (parentFolderId != null) {
+                // [Error] StorageException : 해당 폴더가 없을 경우
+                parentFolder = folderRepository.findById(parentFolderId)
+                        .orElseThrow(() -> new StorageException("Folder not found"));
+            }
+
             // 1. Save the file
             saveOriginalFile(file, saveFileName);
             // 2. Save the file meta data
-            saveFileMetaData(file, userId, originalFileName, saveFileName);
+            saveFileMetaData(file, userId, originalFileName, saveFileName, parentFolder);
 
         } catch (Exception e) {
             throw new StorageException("Failed to store file " + file.getOriginalFilename(), e);
@@ -138,8 +149,20 @@ public class FileSystemStorageService implements StorageService {
         return String.format("%s_%s%s", userId, uuid, fileExtension);
     }
 
-    private void saveFileMetaData(MultipartFile file, String userId, String originalFileName, String saveFileName) {
-        FileMetaData fileMetaData = new FileMetaData(userId, originalFileName, saveFileName, file.getSize(), LocalDateTime.now(), null);
+    // 재귀적으로 부모 폴더의 경로를 가져와 파일 경로 생성
+    private String getFilePath(Folder folder, String fileName) {
+        if (folder == null) {
+            // 최상위 폴더에 도달했을 때 종료
+            return fileName;
+        }
+        // 부모 폴더의 경로를 가져옴
+        String parentFolderPath = getFilePath(folder.getParent(), folder.getName());
+        return parentFolderPath + "/" + fileName;
+    }
+
+    private void saveFileMetaData(MultipartFile file, String userId, String originalFileName, String saveFileName, Folder parentFolder) {
+        String filePath = getFilePath(parentFolder, saveFileName);
+        FileMetaData fileMetaData = new FileMetaData(userId, originalFileName, saveFileName, file.getSize(), LocalDateTime.now(), null, filePath, parentFolder);
         fileMetadataRepository.save(fileMetaData);
     }
 

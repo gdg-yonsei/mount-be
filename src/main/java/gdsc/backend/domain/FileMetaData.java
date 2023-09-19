@@ -1,9 +1,6 @@
 package gdsc.backend.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
@@ -22,17 +19,23 @@ public class FileMetaData {
     private Long fileSize;
     private LocalDateTime uploadDate;
     private LocalDateTime deleteDate;
+    private String filePath;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Folder parentFolder;
 
     public FileMetaData() {
     }
 
-    public FileMetaData(String userId, String fileName, String saveFileName, Long fileSize, LocalDateTime uploadDate, LocalDateTime deleteDate) {
+    public FileMetaData(String userId, String fileName, String saveFileName, Long fileSize, LocalDateTime uploadDate, LocalDateTime deleteDate, String filePath, Folder parentFolder) {
         this.userId = userId;
         this.fileName = fileName;
         this.saveFileName = saveFileName;
         this.fileSize = fileSize;
         this.uploadDate = uploadDate;
         this.deleteDate = deleteDate;
+        this.filePath = filePath;
+        this.parentFolder = parentFolder;
     }
 
     public void deleteFile() {
