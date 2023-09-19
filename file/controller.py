@@ -51,7 +51,7 @@ async def delete_file(db: db_dependency, username: str, file_name: str) -> None:
     if not uploaded_file:
         raise HTTPException(status_code=404, detail="File not found")
 
-    delete_file_data(db, username, uploaded_file)
+    delete_file_data(db, username, file_name)
 
 """ 
 GET : Download file
