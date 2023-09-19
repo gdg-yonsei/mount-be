@@ -2,7 +2,7 @@ import os
 import uuid
 from model.models import Files
 from utils.utils import get_current_time
-from folder.service import get_folder, update_children_file
+from folder.service import get_folder_by_name
 
 
 current_time = get_current_time()
@@ -27,7 +27,7 @@ def save_file_data(db, file, username, parent_name):
     with open(file_path, "wb") as f:
         f.write(file.file.read())
     
-    parent_folder = get_folder(db, username, parent_name)
+    parent_folder = get_folder_by_name(db, username, parent_name)
     
     uploaded_file = Files(
         original_name=file.filename,
@@ -38,7 +38,6 @@ def save_file_data(db, file, username, parent_name):
         modified_time=current_time,
         parent_id=parent_folder.id,
     )
-    update_children_file(db, parent_name, username, uploaded_file)
     
     db.add(uploaded_file)
     db.commit()
@@ -52,9 +51,11 @@ def get_file(db , username : str, original_name : str):
 
 
 # Delete from both local and database
-def delete_file_data(db , username, uploaded_file):
+def delete_file_data(db , username, file_name):
     
-    delete_file_path = os.path.join("uploads",username,uploaded_file.stored_name )
+    uploaded_file = get_file(db, username, file_name)
+    
+    delete_file_path = os.path.join("uploads", username,uploaded_file.stored_name )
     
     try:
         os.remove(delete_file_path)
