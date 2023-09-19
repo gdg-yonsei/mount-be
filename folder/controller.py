@@ -5,15 +5,15 @@ from fastapi import APIRouter, Depends, HTTPException
 from model.models import Folders
 from utils.utils import get_db 
 from folder.service import (
-    get_folder,
+    get_folder_by_name,
     create_new_folder,
-    update_folder_info
+    update_folder_info,
+    delete_folder_info
 )
 
 folderController = APIRouter(prefix="/folder")
 
 db_dependency = Annotated[Session, Depends(get_db)]
-
 
 """ 
 POST : Create folder for specific user
@@ -25,7 +25,7 @@ async def create_folder(
         username: str,
         parent_name: str = "root",
     ):
-    existing_folder = get_folder(db, username, folder_name)
+    existing_folder = get_folder_by_name(db, username, folder_name)
     if existing_folder:
         raise HTTPException(status_code=400, detail="Folders already exist")
     
@@ -43,7 +43,7 @@ async def get_children(
     username: str,
     folder_name: str,
 ) -> list:
-    parent_folder = get_folder(db, username, folder_name)
+    parent_folder = get_folder_by_name(db, username, folder_name)
 
     if parent_folder:
         return parent_folder.children
@@ -66,7 +66,7 @@ PUT : Update Folder name and update modified time
 async def update_folder(
     db: db_dependency, username: str, existing_folder_name: str, new_folder_name: str
 ):
-    existing_folder = get_folder(db, username, existing_folder_name)
+    existing_folder = get_folder_by_name(db, username, existing_folder_name)
     
     if not existing_folder:
         raise HTTPException(status_code=404, detail="Folder Not Found")
@@ -75,4 +75,11 @@ async def update_folder(
 
     return {
         "message": f"Folder name updated from {existing_folder_name} to {new_folder_name}"
+    }
+
+@folderController.delete("/{username}/delete")
+async def delete_folder(db: db_dependency, username: str, folder_name : str):
+    delete_folder_info(db, username, folder_name)
+    return {
+        "message": f"{folder_name} deleted"
     }
