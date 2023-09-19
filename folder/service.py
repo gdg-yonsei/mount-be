@@ -5,9 +5,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from typing import Annotated
 from fastapi import Depends 
-from model.models import Folders
+from model.models import Folders, Files
 from utils.utils import get_db, get_current_time
 from user.service import check_first_user, add_user
+
 
         
 db_dependency = Annotated[Session, Depends(get_db)]
@@ -35,7 +36,7 @@ def create_new_folder(db, folder_name, username, parent_name):
         add_user(db,username)
         
     else:
-        parent_folder = get_folder(db, username, parent_name)
+        parent_folder = get_folder_by_name(db, username, parent_name)
         
         new_folder = Folders(
             original_name=folder_name,
@@ -46,60 +47,25 @@ def create_new_folder(db, folder_name, username, parent_name):
             parent_id= parent_folder.id
         )
         
-        update_children_folder(db, parent_name, username, new_folder)
     
         save_folder(db, new_folder)
     return new_folder
     
 
 
-def get_folder(db, username, folder_name):
-    existing_folder = db.query(Folders).filter(
+def get_folder_by_name(db, username, folder_name):
+    folder = db.query(Folders).filter(
         Folders.uploader == username,
         Folders.original_name == folder_name
         ).first()
-    return existing_folder
+    return folder
 
-def add_child_info(db, child_info, username, parent_name, modified_time):
-    
-    parent_folder = get_folder(db, username, parent_name)
-    
-    if parent_folder.children is None:
-        parent_folder.children = []
-        
-    child_info_json = json.dumps(child_info, ensure_ascii= False)
-    parent_folder.children.append(child_info_json)
-    
-    parent_folder.modified_time = modified_time
-    
-    flag_modified(parent_folder, "children")
-    flag_modified(parent_folder, "modified_time")
+def get_folder_by_id(db, folder_id):
+    folder = db.query(Folders).filter(
+        Folders.id == folder_id
+        ).first()
+    return folder
 
-def update_children_file(db: db_dependency, parent_name : str, username :str , uploaded_file):
-    
-    modified_time = uploaded_file.uploaded_time
-    
-    child_info = {
-            "name": uploaded_file.original_name,
-            "is_folder": False,
-            "file_size" : uploaded_file.file_size,
-            "created_time": uploaded_file.uploaded_time,
-            }
-
-    add_child_info(db, child_info, username,  parent_name , modified_time)
-    
-    
-def update_children_folder(db: db_dependency, parent_name : int, username :str , new_folder):
-            
-    modified_time = new_folder.uploaded_time
-
-    child_info = {
-        "name": new_folder.original_name,
-        "is_folder": True,  
-        "created_time": new_folder.uploaded_time,
-        }
-    
-    add_child_info(db, child_info, username,  parent_name , modified_time)
 
     
 def save_folder(db, new_folder):
@@ -114,3 +80,25 @@ def update_folder_info(db, existing_folder, new_folder_name):
     existing_folder.modified_time = current_time
 
     db.commit()
+    
+def delete_folder_info(db, username, folder_name):
+    from file.service import delete_file_data
+    
+    parent_folder = get_folder_by_name(db, username, folder_name)
+    
+    child_files = db.query(Files).filter(
+        Files.parent_id == parent_folder.id
+    ).all()
+    
+    for item in child_files:
+        delete_file_data(db, username, item.original_name)
+    
+    child_folders = db.query(Folders).filter(
+        Folders.parent_id == parent_folder.id
+    ).all()
+    for item in child_folders:
+        delete_folder_info(db, username, item.original_name)
+        
+    db.delete(parent_folder)
+    db.commit()
+    
