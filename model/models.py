@@ -12,7 +12,7 @@ class Folders(Base):
     uploaded_time = Column(String, nullable=False)
     modified_time = Column(String, nullable=True)
     parent_id = Column(Integer,ForeignKey('folders.id'), default = 1)
-    children = Column(ARRAY(String))
+
 
 class Files(Base):
     __tablename__ = 'files'
