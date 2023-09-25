@@ -5,7 +5,6 @@
   - 폴더 삭제 시 , 하위의 모든 파일 & 폴더 삭제
 - 폴더 / 파일 이동
   - 폴더 이동 시 하위의 모든 파일이 전부 이동
-- 폴더 / 파일 복사
 
 ### 생각해볼 점
 - 키워드 : DFS
@@ -15,6 +14,10 @@
 ## 구현
 
 ###  폴더 삭제
+
+### API Endpoint
+- `PUT /file/{username}/move` : Move file for specific user
+- `PUT /folder/{username}/move` : Move folder for specific user
 
 #### 1) Folders Table 에 children 정보가 있는 경우
 
