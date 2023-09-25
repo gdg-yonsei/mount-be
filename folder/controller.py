@@ -9,7 +9,8 @@ from folder.service import (
     create_new_folder,
     update_folder_data,
     delete_folder_data,
-    move_folder_data
+    move_folder_data,
+    get_folder_data
 )
 
 folderController = APIRouter(prefix="/folder")
@@ -34,22 +35,6 @@ async def create_folder(
 
     return new_folder
 
-
-""" 
-GET : Get all children(files and folders) for specific parent folder 
-"""
-@folderController.get("/{username}/{folder_name}")
-async def get_children(
-    db: db_dependency,
-    username: str,
-    folder_name: str,
-) -> list:
-    parent_folder = get_folder_by_name(db, username, folder_name)
-
-    if parent_folder:
-        return parent_folder.children
-    else:
-        raise HTTPException(status_code=404, detail="Folder not found")
 
 
 """
@@ -102,3 +87,13 @@ async def move_folder(db: db_dependency, username: str, folder_name : str, move_
     return {
         "message": f"{folder_name} moved to {move_to_folder_name}"
     }
+    
+"""
+GET : Get Folder data
+"""
+@folderController.get("/{username}/{folder_name}")
+async def get_folder(db: db_dependency, username: str, folder_name: str):
+    folder_data = get_folder_data(db, username, folder_name)
+    
+    return folder_data
+    

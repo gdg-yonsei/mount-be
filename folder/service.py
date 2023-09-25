@@ -27,6 +27,43 @@ def get_folder_by_id(db, folder_id):
         ).first()
     return folder
 
+def get_folder_path(db, username, folder_name):
+    folder = get_folder_by_name(db, username, folder_name)
+    if folder.original_name == "root":
+        return "root"
+    parent_folder = get_folder_by_id(db, folder.parent_id)
+    path = ""
+
+    while parent_folder.original_name != 'root':
+        path = f"{parent_folder.original_name}/{path}"
+        parent_folder = get_folder_by_id(db, parent_folder.parent_id)
+        
+    path = f"root/{path}{folder_name}/"
+    
+    return path
+
+def get_child_files(db, folder):
+    
+    child_files = db.query(Files).filter(
+        Files.parent_id == folder.id
+    ).all()
+    
+    return child_files
+
+def get_child_folders(db, folder):
+    
+    child_folders = db.query(Folders).filter(
+        Folders.parent_id == folder.id
+    ).all()
+    
+    return child_folders
+    
+
+def get_folder_size(db, username, folder_name):
+    folder = get_folder_by_name(db, username, folder_name)
+    
+    
+
 def save_folder(db, new_folder):
     db.add(new_folder)
     db.commit()
@@ -62,6 +99,8 @@ def create_new_folder(db, folder_name, username, parent_name):
             modified_time=current_time,
             parent_id= parent_folder.id
         )
+        parent_folder.modified_time = current_time
+        flag_modified(parent_folder, "modified_time")
         save_folder(db, new_folder)
     return new_folder
     
@@ -79,16 +118,11 @@ def delete_folder_data(db, username, folder_name):
     
     parent_folder = get_folder_by_name(db, username, folder_name)
     
-    child_files = db.query(Files).filter(
-        Files.parent_id == parent_folder.id
-    ).all()
-    
+    child_files = get_child_files(db, parent_folder)
     for item in child_files:
         delete_file_data(db, username, item.original_name)
     
-    child_folders = db.query(Folders).filter(
-        Folders.parent_id == parent_folder.id
-    ).all()
+    child_folders = get_child_folders(db, parent_folder)
     for item in child_folders:
         delete_folder_data(db, username, item.original_name)
         
@@ -109,3 +143,37 @@ def move_folder_data(db, username, folder_name, move_to_folder_name):
     flag_modified(parent_folder, "modified_time")
     
     db.commit()
+    
+def get_folder_data(db, username, folder_name):
+    folder = get_folder_by_name(db, username, folder_name)
+    return_data = {}
+    # type
+    return_data['type'] = 'folder'
+    
+    # path
+    path = get_folder_path(db, username, folder_name)
+    return_data['path'] = path
+    
+    # size
+    size = 0
+    child_files = get_child_files(db, folder)
+    
+    for item in child_files:
+        size += item.file_size
+    return_data['size'] = size
+        
+    # child data
+    child_file_number = len(child_files)
+    
+    child_folders = get_child_folders(db, folder)
+    child_folder_number = len(child_folders)
+    
+    return_data['child data'] = f"files : {child_file_number}, folders : {child_folder_number}"
+    
+    # uploaded_time
+    return_data['upload_time'] = folder.uploaded_time
+    
+    # modified_time
+    return_data['modified_time'] = folder.modified_time
+    
+    return return_data
