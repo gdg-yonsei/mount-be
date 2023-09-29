@@ -7,6 +7,7 @@ class File(Base):
     '''
     __tablename__ = "Files"
     file_id = Column(Integer, primary_key=True, autoincrement=True)
+    folder_id = Column(Integer, nullable=False)
     file_name = Column(String, nullable=False)
     server_filename = Column(String,unique=True, nullable=False)
     file_size = Column(Integer, nullable=False)
