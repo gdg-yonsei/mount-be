@@ -44,7 +44,7 @@ def check_folder_exists(user_id:str, parent_id:int, folder_name: str, db: Sessio
     if folder_exists:
         raise HTTPException(status_code=409, detail="folder_already_exists")
       
-def check_and_save_folder(user_id:str, folder_path:str, folder_name:str, db: Session):
+def check_and_save_folder(user_id:str, folder_path:str, folder_name:str, db: Session = Depends(get_db)):
     '''
     폴더가 존재하면 raise HTTPException
     Folder 객체 생성 후 db에 저장
@@ -63,7 +63,7 @@ def check_and_save_folder(user_id:str, folder_path:str, folder_name:str, db: Ses
     db.add(folder)
     db.commit()
     
-def check_and_rename_folder(user_id:str, folder_path:str, folder_name:str, new_name:str, db: Session):
+def check_and_rename_folder(user_id:str, folder_path:str, folder_name:str, new_name:str, db: Session = Depends(get_db)):
     '''
     바꾸고자 하는 폴더 이름이 이미 존재할 경우 에러 반환
     폴더 이름 메타데이터 수정
@@ -73,13 +73,15 @@ def check_and_rename_folder(user_id:str, folder_path:str, folder_name:str, new_n
     check_folder_exists(user_id, parent_id, new_name, db)
     
     db.query(Folder).filter(Folder.user_id == user_id).filter(Folder.parent_id == parent_id)\
-        .filter(Folder.folder_name == folder_name).update({Folder.folder_name: new_name})
+        .filter(Folder.folder_name == folder_name)\
+            .update({Folder.folder_name: new_name})
     db.commit()
     
-def check_and_get_items_metadata(user_id:str, folder_path:str, folder_name:str, db:Session):
+def check_and_get_items_metadata(user_id:str, folder_path:str, folder_name:str, db: Session = Depends(get_db)):
     '''
     폴더 안의 폴더/파일 메타데이터 검색
     '''
+    
     parent_id = get_parent_folder_id(user_id, folder_path, db)
     
     # 폴더 검색
