@@ -2,7 +2,6 @@ package gdsc.be.mount.storage.service;
 
 import gdsc.be.mount.storage.Enum.FileFolderType;
 import gdsc.be.mount.storage.dto.request.FileUploadRequest;
-import gdsc.be.mount.storage.dto.request.FolderCreateRequest;
 import gdsc.be.mount.storage.dto.response.FileDownloadResponse;
 import gdsc.be.mount.storage.dto.response.FileUploadResponse;
 import gdsc.be.mount.storage.entity.FileFolder;
@@ -75,7 +74,7 @@ public class FileService {
                 throw dbException;
             }
         } catch (IOException ex) {
-            throw FileUploadException.EXCEPTION;
+            throw new FileFolderUploadException();
         }
     }
 
@@ -85,7 +84,7 @@ public class FileService {
 
         // 삭제하려는 대상이 파일인지 확인
         if(fileFolder.getFileFolderType() == FileFolderType.FOLDER){
-            throw FileDeleteNotAllowedException.EXCEPTION;
+            throw new FileFolderDeleteNotAllowedException();
         }
 
         String deletedFileName = fileFolder.getOriginalName();
@@ -101,7 +100,7 @@ public class FileService {
 
             return fileFolder.getId();
         } catch (IOException ex) {
-            throw FileDeletionException.EXCEPTION;
+            throw new FileFolderDeletionException();
         }
     }
 
@@ -111,7 +110,7 @@ public class FileService {
 
         // 다운로드 하려는 대상이 파일인지 확인
         if(fileFolder.getFileFolderType() == FileFolderType.FOLDER){
-            throw FileDownloadNotAllowedException.EXCEPTION;
+            throw new FileFolderDownloadNotAllowedException();
         }
 
         String originalFileName = fileFolder.getOriginalName();
@@ -131,9 +130,9 @@ public class FileService {
             return new FileDownloadResponse(resource, contentDisposition);
         } catch (MalformedURLException ex) {
             // URL 생성 오류
-            throw FileDownloadExpcetion.EXCEPTION;
+            throw new FileFolderDownloadExpcetion();
         } catch (IOException ex) {
-            throw FileDownloadExpcetion.EXCEPTION;
+            throw new FileFolderDownloadExpcetion();
         }
     }
 
@@ -148,17 +147,17 @@ public class FileService {
     private void validate(MultipartFile file) {
         // 파일이 존재하는지 확인
         if (file == null) {
-            throw FileUploadException.EXCEPTION;
+            throw new FileEmptyException();
         }
 
         // 파일명이 비어있는지 확인
         if (file.getOriginalFilename() == null || file.getOriginalFilename().isEmpty()) {
-            throw FileUploadException.EXCEPTION;
+            throw new FileEmptyException();
         }
 
         // 파일 크기가 0인지 확인
         if (file.getSize() == 0) {
-            throw FileUploadException.EXCEPTION;
+            throw new FileEmptyException();
         }
     }
 
@@ -244,7 +243,7 @@ public class FileService {
 
         // 물리적인 파일이 존재하지 않으면 예외
         if (!resource.exists()) {
-            throw FileNotFoundException.EXCEPTION;
+            throw new FileFolderNotFoundException();
         }
 
         return resource;
@@ -255,20 +254,20 @@ public class FileService {
      */
     private FileFolder getFileFolderFromDatabase(Long fileId) {
         return fileFolderRepository.findById(fileId)
-                .orElseThrow(() -> FileNotFoundException.EXCEPTION);
+                .orElseThrow(FileFolderNotFoundException::new);
     }
 
     private void checkOwnership(String userName, String owner, boolean isForUpload, boolean isForDownload, boolean isForUpdate) {
         if (!userName.equals(owner)) {
 
             if(isForUpload){
-                throw FileUploadNotAllowedException.EXCEPTION;
+                throw new FileFolderUploadNotAllowedException();
             }else if(isForDownload){
-                throw FileDownloadNotAllowedException.EXCEPTION;
+                throw new FileFolderDownloadNotAllowedException();
             }else if(isForUpdate){
-                throw FileUpdateNotAllowedException.EXCEPTION;
+                throw new FileFolderUpdateNotAllowedException();
             }else{
-                throw FileDeleteNotAllowedException.EXCEPTION;
+                throw new FileFolderDeleteNotAllowedException();
             }
 
         }
@@ -285,7 +284,7 @@ public class FileService {
         if(parentId != null){
             FileFolder parentFileFolder = fileFolderRepository.findById(parentId).orElseThrow();
             if(parentFileFolder.getFileFolderType() == FileFolderType.FILE){
-                throw FileUploadException.EXCEPTION;
+                throw new FileFolderUploadException();
             }
         }
     }

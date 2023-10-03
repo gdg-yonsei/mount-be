@@ -20,27 +20,22 @@ public enum ErrorCode {
     DATA_SIZE_VIOLATION             (400, "C010", "FileFolder size exceeds limit"),
     CONFLICT                        (409, "C011", "Conflict occurred"),
 
-    // File / Folder
-    FILE_NOT_FOUND                  (404, "F001", "File or folder is not found"),
-    FILE_DOWNLOAD_NOT_ALLOWED       (404, "F002", "Not allowed to download this file"),
-    FILE_DELETE_NOT_ALLOWED         (404, "F003", "Not allowed to delete this file or folder"),
-    FILE_UPLOAD_NOT_ALLOWED         (404, "F004", "Not allowed to upload this file or folder"),
-    FILE_UPDATE_NOT_ALLOWED         (404, "F005", "Not allowed to update this file or folder"),
-    FILE_NOT_ALLOWED                (404, "F007", "File or folder is not allowed"),
-
     // File
-    FILE_UPLOAD_FAILED              (500, "F004", "File upload failed"),
-    FILE_DOWNLOAD_FAILED            (500, "F005", "File download failed"),
-    FILE_DELETE_FAILED              (500, "F006", "File delete failed"),
+    FILEFOLDER_NOT_FOUND                  (404, "F001", "File or folder is not found"),
+    FILEFOLDER_DOWNLOAD_NOT_ALLOWED       (404, "F002", "Not allowed to download this file"),
+    FILEFOLDER_DELETE_NOT_ALLOWED         (404, "F003", "Not allowed to delete this file or folder"),
+    FILEFOLDER_UPLOAD_NOT_ALLOWED         (404, "F004", "Not allowed to upload this file or folder"),
+    FILEFOLDER_UPDATE_NOT_ALLOWED         (404, "F005", "Not allowed to update this file or folder"),
+    FILEFOLDER_NOT_ALLOWED                (404, "F007", "File or folder is not allowed"),
 
-    FILE_SIZE_EXCEEDS_LIMIT         (400, "F008", "File/Folder size exceeds limit"),
-    FILE_NOT_ALLOWED_EXTENSION      (400, "F009", "File/Folder is not allowed extension"),
-    FILE_EMPTY                      (400, "F010", "File/Folder is empty"),
+    FILEFOLDER_UPLOAD_FAILED              (500, "F004", "File upload failed"),
+    FILEFOLDER_DOWNLOAD_FAILED            (500, "F005", "File download failed"),
+    FILEFOLDER_DELETE_FAILED              (500, "F006", "File delete failed"),
 
-    // Folder
-    FOLDER_CREATE_FAILED            (500, "F011", "Folder create failed"),
-    FOLDER_UPDATE_FAILED            (500, "F012", "Folder update failed"),
-    FOLDER_NAME_DUPLICATED          (400, "F013", "Folder name is duplicated");
+    FILEFOLDER_NAME_DUPLICATED            (400, "F007", "File/Folder name is duplicated"),
+    FILEFOLDER_SIZE_EXCEEDS_LIMIT         (400, "F008", "File/Folder size exceeds limit"),
+    FILEFOLDER_NOT_ALLOWED_EXTENSION      (400, "F009", "File/Folder is not allowed extension"),
+    FILE_EMPTY                      (400, "F010", "File is empty");
 
 
     private final int status;

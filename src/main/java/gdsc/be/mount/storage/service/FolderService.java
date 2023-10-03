@@ -71,7 +71,7 @@ public class FolderService {
 
         // 수정하려는 대상이 폴더인지 확인
         if(fileFolder.getFileFolderType() == FileFolderType.FILE){
-            throw FileUpdateNotAllowedException.EXCEPTION;
+            throw new FileFolderUpdateNotAllowedException();
         }
 
         // 사용자가 생성한 폴더의 범위 내에서 동일한 폴더 이름으로 이름 수정을 할 경우 예외
@@ -92,17 +92,16 @@ public class FolderService {
 
     public FolderInfoResponse getFolderMetadata(Long folderId, String userName) {
 
-        FileFolder fileFolder = fileFolderRepository.findById(folderId).orElseThrow(
-                () -> FileNotFoundException.EXCEPTION
-        );
+        FileFolder fileFolder = fileFolderRepository.findById(folderId)
+                .orElseThrow(FileFolderNotFoundException::new);
 
         // 정보를 얻으려는 대상이 폴더인지 확인
         if(fileFolder.getFileFolderType() == FileFolderType.FILE){
-            throw FileUpdateNotAllowedException.EXCEPTION;
+            throw new FileFolderUpdateNotAllowedException();
         }
 
         if(!fileFolder.getUserName().equals(userName)){
-            throw FileDownloadNotAllowedException.EXCEPTION;
+            throw new FileFolderDownloadNotAllowedException();
         }
         List<FileFolder> childFileFolders = fileFolderRepository.findChildrenByChildIds(fileFolder.getChildIds());
 
@@ -161,7 +160,7 @@ public class FolderService {
 
         // 물리적인 파일이 존재하지 않으면 예외
         if (!resource.exists()) {
-            throw FileNotFoundException.EXCEPTION;
+            throw new FileFolderNotFoundException();
         }
 
         return resource;
@@ -181,20 +180,16 @@ public class FolderService {
      */
     private FileFolder getFileFolderFromDatabase(Long fileId) {
         return fileFolderRepository.findById(fileId)
-                .orElseThrow(() -> FileNotFoundException.EXCEPTION);
+                .orElseThrow(FileFolderNotFoundException::new);
     }
 
-    private void checkOwnership(String userName, String owner, boolean isForUpload, boolean isForDownload, boolean isForUpdate) {
+    private void checkOwnership(String userName, String owner, boolean isForUpload, boolean isForUpdate) {
         if (!userName.equals(owner)) {
 
             if(isForUpload){
-                throw FileUploadNotAllowedException.EXCEPTION;
-            }else if(isForDownload){
-                throw FileDownloadNotAllowedException.EXCEPTION;
+                throw new FileFolderUploadNotAllowedException();
             }else if(isForUpdate){
-                throw FileUpdateNotAllowedException.EXCEPTION;
-            }else{
-                throw FileDeleteNotAllowedException.EXCEPTION;
+                throw new FileFolderUpdateNotAllowedException();
             }
 
         }
@@ -203,7 +198,7 @@ public class FolderService {
     private void checkIfParentIsYours(Long parentId, String userName) {
         if(parentId != null){
             FileFolder parentFileFolder = fileFolderRepository.findById(parentId).orElseThrow();
-            checkOwnership(userName, parentFileFolder.getUserName(), true, false, false);
+            checkOwnership(userName, parentFileFolder.getUserName(), true, false);
         }
     }
 
@@ -211,20 +206,20 @@ public class FolderService {
         if(parentId != null){
             FileFolder parentFileFolder = fileFolderRepository.findById(parentId).orElseThrow();
             if(parentFileFolder.getFileFolderType() == FileFolderType.FILE){
-                throw FileUploadException.EXCEPTION;
+                throw new FileFolderUploadException();
             }
         }
     }
 
     private FileFolder getFileFolderForUpdateAfterCheck(Long fileId, String userName) {
         FileFolder fileFolder = getFileFolderFromDatabase(fileId);
-        checkOwnership(userName, fileFolder.getUserName(), false, false, true);
+        checkOwnership(userName, fileFolder.getUserName(), false, true);
         return fileFolder;
     }
 
     private void checkDuplicateFolderName(String userName, String folderName) {
         if (fileFolderRepository.existsByUserNameAndOriginalName(userName, folderName)) {
-            throw FolderNameDuplicateException.EXCEPTION;
+            throw new FileFolderNameDuplicateException();
         }
     }
 
