@@ -184,8 +184,8 @@ public class FileFolderService {
             throw FileUpdateNotAllowedException.EXCEPTION;
         }
 
-        // 이미 존재하는 이름으로 변경할 경우 오류
-        checkDuplicateFolderName(newFolderName, fileFolder.getParentId());
+        // 사용자가 생성한 폴더의 범위 내에서 동일한 폴더 이름으로 이름 수정을 할 경우 예외
+        checkDuplicateFolderName(userName, newFolderName);
 
         String originalFolderName = fileFolder.getOriginalName();
 
@@ -406,8 +406,8 @@ public class FileFolderService {
         return fileFolder;
     }
 
-    private void checkDuplicateFolderName(String folderName, Long parentId) {
-        if (fileFolderRepository.existsByOriginalNameAndParentId(folderName, parentId)) {
+    private void checkDuplicateFolderName(String userName, String folderName) {
+        if (fileFolderRepository.existsByUserNameAndOriginalName(userName, folderName)) {
             throw FolderNameDuplicateException.EXCEPTION;
         }
     }
