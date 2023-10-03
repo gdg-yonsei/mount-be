@@ -1,5 +1,6 @@
 package gdsc.be.mount.storage.service;
 
+import gdsc.be.mount.storage.Enum.ActionType;
 import gdsc.be.mount.storage.Enum.FileFolderType;
 import gdsc.be.mount.storage.dto.request.FileFolderUpdateRequest;
 import gdsc.be.mount.storage.dto.request.FolderCreateRequest;
@@ -36,11 +37,11 @@ public class FolderService {
         String userName = folderCreateRequest.userName();
         Long parentId = folderCreateRequest.parentId();
 
-        // 만약 부모의 폴더의 주인이 자신이 아니라면 예외 발생
-        checkIfParentIsYours(parentId, userName);
-
         // 만약 parentId 가 폴더가 아니라면 예외 발생
         checkIfParentIsFolder(parentId);
+
+        // 만약 부모의 폴더의 주인이 자신이 아니라면 예외 발생
+        checkParentFolderOwnershipForUpload(parentId, userName);
 
         String folderName = generateRandomFolderName();
         String folderLogicalPath = getFullLogicalPath(userName, folderName, parentId);
@@ -67,7 +68,7 @@ public class FolderService {
         String newFolderName = request.newFolderName();
 
         // 파일 확인 및 권한 검사
-        FileFolder fileFolder = getFileFolderForUpdateAfterCheck(folderId, userName);
+        FileFolder fileFolder = getFileFolderForUpdateAfterCheckOwnership(folderId, userName);
 
         // 수정하려는 대상이 폴더인지 확인
         if(fileFolder.getFileFolderType() == FileFolderType.FILE){
@@ -154,18 +155,6 @@ public class FolderService {
         fileFolderRepository.save(parentFileFolder);
     }
 
-    UrlResource getResource(String path) throws IOException {
-        Path filePath = Path.of(path);
-        UrlResource resource = new UrlResource(filePath.toUri());
-
-        // 물리적인 파일이 존재하지 않으면 예외
-        if (!resource.exists()) {
-            throw new FileFolderNotFoundException();
-        }
-
-        return resource;
-    }
-
     private static String generateRandomFolderName() {
         // 랜덤한 UUID를 사용하여 폴더 이름 생성
         return UUID.randomUUID().toString().substring(0, 5);
@@ -183,22 +172,21 @@ public class FolderService {
                 .orElseThrow(FileFolderNotFoundException::new);
     }
 
-    private void checkOwnership(String userName, String owner, boolean isForUpload, boolean isForUpdate) {
+    private void checkOwnership(String userName, String owner, ActionType actionType) {
         if (!userName.equals(owner)) {
-
-            if(isForUpload){
-                throw new FileFolderUploadNotAllowedException();
-            }else if(isForUpdate){
-                throw new FileFolderUpdateNotAllowedException();
+            switch (actionType) {
+                case UPLOAD -> throw new FileFolderUploadNotAllowedException();
+                case UPDATE -> throw new FileFolderUpdateNotAllowedException();
+                default -> {
+                }
             }
-
         }
     }
 
-    private void checkIfParentIsYours(Long parentId, String userName) {
+    private void checkParentFolderOwnershipForUpload(Long parentId, String userName) {
         if(parentId != null){
             FileFolder parentFileFolder = fileFolderRepository.findById(parentId).orElseThrow();
-            checkOwnership(userName, parentFileFolder.getUserName(), true, false);
+            checkOwnership(userName, parentFileFolder.getUserName(), ActionType.UPLOAD);
         }
     }
 
@@ -211,9 +199,9 @@ public class FolderService {
         }
     }
 
-    private FileFolder getFileFolderForUpdateAfterCheck(Long fileId, String userName) {
+    private FileFolder getFileFolderForUpdateAfterCheckOwnership(Long fileId, String userName) {
         FileFolder fileFolder = getFileFolderFromDatabase(fileId);
-        checkOwnership(userName, fileFolder.getUserName(), false, true);
+        checkOwnership(userName, fileFolder.getUserName(), ActionType.UPDATE);
         return fileFolder;
     }
 

@@ -1,5 +1,6 @@
 package gdsc.be.mount.storage.service;
 
+import gdsc.be.mount.storage.Enum.ActionType;
 import gdsc.be.mount.storage.Enum.FileFolderType;
 import gdsc.be.mount.storage.dto.request.FileUploadRequest;
 import gdsc.be.mount.storage.dto.response.FileDownloadResponse;
@@ -19,7 +20,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriUtils;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,11 +43,11 @@ public class FileService {
         Long parentId = fileUploadRequest.parentId();
         String userName = fileUploadRequest.userName();
 
-        // 만약 부모의 폴더의 주인이 자신이 아니라면 예외 발생
-        checkIfParentIsYours(parentId, userName);
-
         // 만약 parentId 가 폴더가 아니라면 예외 발생
         checkIfParentIsFolder(parentId);
+
+        // 만약 부모의 폴더의 주인이 자신이 아니라면 예외 발생
+        checkParentFolderOwnershipForUpload(parentId, userName);
 
         String originalFileName = file.getOriginalFilename(); // 사용자가 등록한 최초 파일명
         String storeFileName = createStoreFileName(originalFileName); // 서버 내부에서 관리할 파일명
@@ -82,7 +82,7 @@ public class FileService {
 
     public Long deleteFile(Long fileId, String userName) {
         // 파일 확인 및 권한 검사
-        FileFolder fileFolder = getFileFolderForDeletionAfterCheck(fileId, userName);
+        FileFolder fileFolder = getFileFolderForDeletionAfterCheckOwnership(fileId, userName);
 
         // 삭제하려는 대상이 파일인지 확인
         if(fileFolder.getFileFolderType() == FileFolderType.FOLDER){
@@ -108,7 +108,7 @@ public class FileService {
 
     public FileDownloadResponse downloadFile(Long fileId, String userName) {
         // 파일 확인 및 권한 검사
-        FileFolder fileFolder = getFileFolderForDownloadAfterCheck(fileId, userName);
+        FileFolder fileFolder = getFileFolderForDownloadAfterCheckOwnership(fileId, userName);
 
         // 다운로드 하려는 대상이 파일인지 확인
         if(fileFolder.getFileFolderType() == FileFolderType.FOLDER){
@@ -244,26 +244,23 @@ public class FileService {
                 .orElseThrow(FileFolderNotFoundException::new);
     }
 
-    private void checkOwnership(String userName, String owner, boolean isForUpload, boolean isForDownload, boolean isForUpdate) {
+    private void checkOwnership(String userName, String owner, ActionType actionType) {
         if (!userName.equals(owner)) {
-
-            if(isForUpload){
-                throw new FileFolderUploadNotAllowedException();
-            }else if(isForDownload){
-                throw new FileFolderDownloadNotAllowedException();
-            }else if(isForUpdate){
-                throw new FileFolderUpdateNotAllowedException();
-            }else{
-                throw new FileFolderDeleteNotAllowedException();
+            switch (actionType) {
+                case UPLOAD -> throw new FileFolderUploadNotAllowedException();
+                case DOWNLOAD -> throw new FileFolderDownloadNotAllowedException();
+                case UPDATE -> throw new FileFolderUpdateNotAllowedException();
+                case DELETE -> throw new FileFolderDeleteNotAllowedException();
+                default -> {
+                }
             }
-
         }
     }
 
-    private void checkIfParentIsYours(Long parentId, String userName) {
+    private void checkParentFolderOwnershipForUpload(Long parentId, String userName) {
         if(parentId != null){
             FileFolder parentFileFolder = fileFolderRepository.findById(parentId).orElseThrow();
-            checkOwnership(userName, parentFileFolder.getUserName(), true, false, false);
+            checkOwnership(userName, parentFileFolder.getUserName(), ActionType.UPLOAD);
         }
     }
 
@@ -276,15 +273,15 @@ public class FileService {
         }
     }
 
-    private FileFolder getFileFolderForDownloadAfterCheck(Long fileId, String userName) {
+    private FileFolder getFileFolderForDownloadAfterCheckOwnership(Long fileId, String userName) {
         FileFolder fileFolder = getFileFolderFromDatabase(fileId);
-        checkOwnership(userName, fileFolder.getUserName(),false, true, false);
+        checkOwnership(userName, fileFolder.getUserName(), ActionType.DOWNLOAD);
         return fileFolder;
     }
 
-    private FileFolder getFileFolderForDeletionAfterCheck(Long fileId, String userName) {
+    private FileFolder getFileFolderForDeletionAfterCheckOwnership(Long fileId, String userName) {
         FileFolder fileFolder = getFileFolderFromDatabase(fileId);
-        checkOwnership(userName, fileFolder.getUserName(),false, false, false);
+        checkOwnership(userName, fileFolder.getUserName(), ActionType.DELETE);
         return fileFolder;
     }
 }
