@@ -224,7 +224,7 @@ public class FileService {
         Files.delete(fileToDelete);
     }
 
-    UrlResource getResource(String path) throws IOException {
+    private UrlResource getResource(String path) throws IOException {
         Path filePath = Path.of(path);
         UrlResource resource = new UrlResource(filePath.toUri());
 
