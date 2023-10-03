@@ -129,10 +129,7 @@ public class FileService {
             String contentDisposition = "attachment; filename=\"" + encodedOriginalFileName + "\"";
 
             return new FileDownloadResponse(resource, contentDisposition);
-        } catch (MalformedURLException ex) {
-            // URL 생성 오류
-            throw new FileFolderDownloadExpcetion();
-        } catch (IOException ex) {
+        } catch (IOException ex){
             throw new FileFolderDownloadExpcetion();
         }
     }
