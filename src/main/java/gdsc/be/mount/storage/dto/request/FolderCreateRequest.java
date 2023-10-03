@@ -2,6 +2,7 @@ package gdsc.be.mount.storage.dto.request;
 
 import gdsc.be.mount.storage.Enum.FileFolderType;
 import gdsc.be.mount.storage.entity.FileFolder;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 @Builder
 public record FolderCreateRequest (
     Long parentId,
+    @NotBlank
     String userName
 ){
 

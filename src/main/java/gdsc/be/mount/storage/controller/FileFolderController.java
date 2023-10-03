@@ -9,6 +9,7 @@ import gdsc.be.mount.storage.dto.response.FileUploadResponse;
 import gdsc.be.mount.storage.dto.response.FolderCreateResponse;
 import gdsc.be.mount.storage.dto.response.FolderInfoResponse;
 import gdsc.be.mount.storage.service.FileFolderService;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +37,7 @@ public class FileFolderController {
     @PostMapping(value = "/files/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<SuccessResponse<FileUploadResponse>> uploadFile(
             @RequestPart("file") MultipartFile file,
-            @RequestPart("request") FileUploadRequest fileUploadRequest
+            @RequestPart("request") @Valid FileUploadRequest fileUploadRequest
     ) {
 
         FileUploadResponse data = fileFolderService.uploadFile(file, fileUploadRequest);
@@ -83,7 +84,7 @@ public class FileFolderController {
      */
     @PostMapping("/folders")
     public ResponseEntity<SuccessResponse<FolderCreateResponse>> createFolder(
-            @RequestBody FolderCreateRequest folderCreateRequest
+            @RequestBody @Valid FolderCreateRequest folderCreateRequest
     ) {
         FolderCreateResponse data = fileFolderService.createFolder(folderCreateRequest);
 
@@ -99,7 +100,7 @@ public class FileFolderController {
     @PatchMapping("/folders/{folderId}")
     public ResponseEntity<SuccessResponse<Long>> updateFolderName(
             @PathVariable Long folderId,
-            @RequestBody FileFolderUpdateRequest request
+            @RequestBody @Valid FileFolderUpdateRequest request
     ) {
         Long data = fileFolderService.updateFolderName(folderId, request);
 
