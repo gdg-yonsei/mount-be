@@ -2,8 +2,8 @@ package gdsc.be.mount.storage.service;
 
 import gdsc.be.mount.storage.Enum.FileFolderType;
 import gdsc.be.mount.storage.dto.request.FileUploadRequest;
-import gdsc.be.mount.storage.dto.response.FileUploadResponse;
 import gdsc.be.mount.storage.dto.response.FileDownloadResponse;
+import gdsc.be.mount.storage.dto.response.FileUploadResponse;
 import gdsc.be.mount.storage.entity.FileFolder;
 import gdsc.be.mount.storage.repository.FileFolderRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -16,22 +16,24 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Service 테스트")
-public class FileFolderServiceTest {
+public class FileServiceTest {
 
     @Mock
     private FileFolderRepository fileFolderRepository;
 
     @InjectMocks
-    private FileFolderService fileFolderService;
+    private FileService fileService;
 
     // ================ 이후 테스트 고도화 작업 필요
     @Test
@@ -58,7 +60,7 @@ public class FileFolderServiceTest {
         // doNothing().when(fileFolder).transferTo(any(java.io.FileFolder.class));
 
         // When
-        FileUploadResponse response = fileFolderService.uploadFile(multipartFile, fileUploadRequest);
+        FileUploadResponse response = fileService.uploadFile(multipartFile, fileUploadRequest);
 
         // Then
         assertNotNull(response);
@@ -86,11 +88,11 @@ public class FileFolderServiceTest {
         // When
         when(fileFolderRepository.findById(fileId)).thenReturn(Optional.of(fileFolder));
 
-        when(fileFolderService.getResource(fileFolder.getPath()))
+        when(fileService.getResource(fileFolder.getPath()))
                 .thenReturn(new UrlResource("file://" + fileFolder.getPath()));
 
         // When
-        FileDownloadResponse response = fileFolderService.downloadFile(fileId, userName);
+        FileDownloadResponse response = fileService.downloadFile(fileId, userName);
 
         // Then
         assertNotNull(response);
@@ -103,16 +105,16 @@ public class FileFolderServiceTest {
 
     public FileFolder createFileEntity(){
         return FileFolder.builder()
-            .fileFolderType(FileFolderType.FILE)
-            .parentId(null)
-            .childIds(null)
-            .id(1L)
-            .originalName("test.txt")
-            .storedName("RANDOMRANDOM")
-            .path("/file/path")
-            .size(300L)
-            .uploadTime(LocalDateTime.of(2023, 9, 3, 2, 1))
-            .userName("testUser")
-            .build();
+                .fileFolderType(FileFolderType.FILE)
+                .parentId(null)
+                .childIds(null)
+                .id(1L)
+                .originalName("test.txt")
+                .storedName("RANDOMRANDOM")
+                .path("/file/path")
+                .size(300L)
+                .uploadTime(LocalDateTime.of(2023, 9, 3, 2, 1))
+                .userName("testUser")
+                .build();
     }
 }
