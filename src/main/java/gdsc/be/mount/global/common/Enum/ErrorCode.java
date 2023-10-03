@@ -22,9 +22,10 @@ public enum ErrorCode {
 
     // File / Folder
     FILE_NOT_FOUND                  (404, "F001", "File or folder is not found"),
-    FILE_DOWNLOAD_NOT_ALLOWED       (404, "F002", "You are not allowed to download this file"),
-    FILE_DELETE_NOT_ALLOWED         (404, "F003", "You are not allowed to delete this file or folder"),
-    FILE_UPLOAD_NOT_ALLOWED         (404, "F004", "You are not allowed to upload this file or folder"),
+    FILE_DOWNLOAD_NOT_ALLOWED       (404, "F002", "Not allowed to download this file"),
+    FILE_DELETE_NOT_ALLOWED         (404, "F003", "Not allowed to delete this file or folder"),
+    FILE_UPLOAD_NOT_ALLOWED         (404, "F004", "Not allowed to upload this file or folder"),
+    FILE_UPDATE_NOT_ALLOWED         (404, "F005", "Not allowed to update this file or folder"),
     FILE_NOT_ALLOWED                (404, "F007", "File or folder is not allowed"),
 
     // File

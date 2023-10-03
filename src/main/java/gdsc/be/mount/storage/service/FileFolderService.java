@@ -1,5 +1,6 @@
 package gdsc.be.mount.storage.service;
 
+import gdsc.be.mount.storage.Enum.FileFolderType;
 import gdsc.be.mount.storage.dto.request.FileFolderUpdateRequest;
 import gdsc.be.mount.storage.dto.request.FileUploadRequest;
 import gdsc.be.mount.storage.dto.request.FolderCreateRequest;
@@ -24,7 +25,6 @@ import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 
@@ -44,10 +44,17 @@ public class FileFolderService {
         validate(file); // 파일 유효성 검사
 
         Long parentId = fileUploadRequest.parentId();
+        String userName = fileUploadRequest.userName();
+
+        // 만약 부모의 폴더의 주인이 자신이 아니라면 예외 발생
+        checkIfParentIsYours(parentId, userName);
+
+        // 만약 parentId 가 폴더가 아니라면 예외 발생
+        checkIfParentIsFolder(parentId);
 
         String originalFileName = file.getOriginalFilename(); // 사용자가 등록한 최초 파일명
         String storeFileName = createStoreFileName(originalFileName); // 서버 내부에서 관리할 파일명
-        String logicalFilePath = getFullLogicalPath(storeFileName, parentId); // 파일의 논리적 경로
+        String logicalFilePath = getFullLogicalPath(userName, storeFileName, parentId); // 파일의 논리적 경로
         String physicalFilePath = uploadPath + storeFileName; // 파일의 물리적 경로
 
         log.debug("[uploadFile] originalFileName: {}, logicalFilePath: {}", originalFileName, logicalFilePath);
@@ -80,6 +87,11 @@ public class FileFolderService {
         // 파일 확인 및 권한 검사
         FileFolder fileFolder = getFileFolderForDeletionAfterCheck(fileId, userName);
 
+        // 삭제하려는 대상이 파일인지 확인
+        if(fileFolder.getFileFolderType() == FileFolderType.FOLDER){
+            throw FileDeleteNotAllowedException.EXCEPTION;
+        }
+
         String deletedFileName = fileFolder.getOriginalName();
         String physicalFilePath = uploadPath + fileFolder.getStoredName(); // 가상 폴더 구조이므로 가상 경로가 아닌 물리적인 실제 경로를 사용
         log.debug("[deleteFile] FileName: {}", deletedFileName);
@@ -100,6 +112,11 @@ public class FileFolderService {
     public FileDownloadResponse downloadFile(Long fileId, String userName) {
         // 파일 확인 및 권한 검사
         FileFolder fileFolder = getFileFolderForDownloadAfterCheck(fileId, userName);
+
+        // 다운로드 하려는 대상이 파일인지 확인
+        if(fileFolder.getFileFolderType() == FileFolderType.FOLDER){
+            throw FileDownloadNotAllowedException.EXCEPTION;
+        }
 
         String originalFileName = fileFolder.getOriginalName();
         String saveFileName = fileFolder.getStoredName();
@@ -129,8 +146,14 @@ public class FileFolderService {
         String userName = folderCreateRequest.userName();
         Long parentId = folderCreateRequest.parentId();
 
+        // 만약 부모의 폴더의 주인이 자신이 아니라면 예외 발생
+        checkIfParentIsYours(parentId, userName);
+
+        // 만약 parentId 가 폴더가 아니라면 예외 발생
+        checkIfParentIsFolder(parentId);
+
         String folderName = generateRandomFolderName();
-        String folderLogicalPath = getFullLogicalPath(folderName, parentId);
+        String folderLogicalPath = getFullLogicalPath(userName, folderName, parentId);
 
         log.debug("[createFolder] folderName: {}, folderPath: {}", folderName, folderLogicalPath);
 
@@ -156,6 +179,11 @@ public class FileFolderService {
         // 파일 확인 및 권한 검사
         FileFolder fileFolder = getFileFolderForUpdateAfterCheck(folderId, userName);
 
+        // 수정하려는 대상이 폴더인지 확인
+        if(fileFolder.getFileFolderType() == FileFolderType.FILE){
+            throw FileUpdateNotAllowedException.EXCEPTION;
+        }
+
         // 이미 존재하는 이름으로 변경할 경우 오류
         checkDuplicateFolderName(newFolderName, fileFolder.getParentId());
 
@@ -174,17 +202,21 @@ public class FileFolderService {
 
     public FolderInfoResponse getFolderMetadata(Long folderId, String userName) {
 
-        // 추후 수정 : DB Connection 한 번에 처리하도록 두 개의 서브 쿼리를 결합 (UNION)
-
-        FileFolder folder = fileFolderRepository.findById(folderId).orElseThrow(
+        FileFolder fileFolder = fileFolderRepository.findById(folderId).orElseThrow(
                 () -> FileNotFoundException.EXCEPTION
         );
-        if(!folder.getUserName().equals(userName)){
+
+        // 정보를 얻으려는 대상이 폴더인지 확인
+        if(fileFolder.getFileFolderType() == FileFolderType.FILE){
+            throw FileUpdateNotAllowedException.EXCEPTION;
+        }
+
+        if(!fileFolder.getUserName().equals(userName)){
             throw FileDownloadNotAllowedException.EXCEPTION;
         }
-        List<FileFolder> childFileFolders = fileFolderRepository.findChildrenByChildIds(folder.getChildIds());
+        List<FileFolder> childFileFolders = fileFolderRepository.findChildrenByChildIds(fileFolder.getChildIds());
 
-        return FolderInfoResponse.fromEntity(folder, childFileFolders);
+        return FolderInfoResponse.fromEntity(fileFolder, childFileFolders);
     }
 
 
@@ -235,12 +267,15 @@ public class FileFolderService {
         return originalFilename.substring(pos + 1);
     }
 
-    private String getFullLogicalPath(String storeFileName, Long parentId) {
+    private String getFullLogicalPath(String userName, String storeFileName, Long parentId) {
 
         StringBuilder pathBuilder = new StringBuilder();
 
         if (parentId != null) {
-            pathBuilder.append(getParentFolderOriginalName(parentId));
+            pathBuilder.append(getParentFolderLogicalPath(parentId));
+        } else {
+            // 최상위 위치면 사용자 이름으로 시작
+            pathBuilder.append(userName).append("/");
         }
 
         if(extractExt(storeFileName).isEmpty()){
@@ -252,7 +287,7 @@ public class FileFolderService {
         return pathBuilder.toString();
     }
 
-    private String getParentFolderOriginalName(Long parentId) {
+    private String getParentFolderLogicalPath(Long parentId) {
         FileFolder parentFileFolder = fileFolderRepository.findById(parentId).orElseThrow();
         return parentFileFolder.getPath();
     }
@@ -321,10 +356,12 @@ public class FileFolderService {
                 .orElseThrow(() -> FileNotFoundException.EXCEPTION);
     }
 
-    private void checkOwnership(String userName, String owner, boolean isForDownload, boolean isForUpdate) {
+    private void checkOwnership(String userName, String owner, boolean isForUpload, boolean isForDownload, boolean isForUpdate) {
         if (!userName.equals(owner)) {
 
-            if(isForDownload){
+            if(isForUpload){
+                throw FileUploadNotAllowedException.EXCEPTION;
+            }else if(isForDownload){
                 throw FileDownloadNotAllowedException.EXCEPTION;
             }else if(isForUpdate){
                 throw FileUpdateNotAllowedException.EXCEPTION;
@@ -335,21 +372,37 @@ public class FileFolderService {
         }
     }
 
+    private void checkIfParentIsYours(Long parentId, String userName) {
+        if(parentId != null){
+            FileFolder parentFileFolder = fileFolderRepository.findById(parentId).orElseThrow();
+            checkOwnership(userName, parentFileFolder.getUserName(), true, false, false);
+        }
+    }
+
+    private void checkIfParentIsFolder(Long parentId) {
+        if(parentId != null){
+            FileFolder parentFileFolder = fileFolderRepository.findById(parentId).orElseThrow();
+            if(parentFileFolder.getFileFolderType() == FileFolderType.FILE){
+                throw FileUploadException.EXCEPTION;
+            }
+        }
+    }
+
     private FileFolder getFileFolderForDownloadAfterCheck(Long fileId, String userName) {
         FileFolder fileFolder = getFileFolderFromDatabase(fileId);
-        checkOwnership(userName, fileFolder.getUserName(),true, false);
+        checkOwnership(userName, fileFolder.getUserName(),false, true, false);
         return fileFolder;
     }
 
     private FileFolder getFileFolderForDeletionAfterCheck(Long fileId, String userName) {
         FileFolder fileFolder = getFileFolderFromDatabase(fileId);
-        checkOwnership(userName, fileFolder.getUserName(),false, false);
+        checkOwnership(userName, fileFolder.getUserName(),false, false, false);
         return fileFolder;
     }
 
     private FileFolder getFileFolderForUpdateAfterCheck(Long fileId, String userName) {
         FileFolder fileFolder = getFileFolderFromDatabase(fileId);
-        checkOwnership(userName, fileFolder.getUserName(), false, true);
+        checkOwnership(userName, fileFolder.getUserName(), false, false, true);
         return fileFolder;
     }
 
