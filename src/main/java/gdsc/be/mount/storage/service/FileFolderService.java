@@ -78,7 +78,7 @@ public class FileFolderService {
 
     public Long deleteFile(Long fileId, String userName) {
         // 파일 확인 및 권한 검사
-        FileFolder fileFolder = getFileForDeletionAfterCheck(fileId, userName);
+        FileFolder fileFolder = getFileFolderForDeletionAfterCheck(fileId, userName);
 
         String deletedFileName = fileFolder.getOriginalName();
         String physicalFilePath = uploadPath + fileFolder.getStoredName(); // 가상 폴더 구조이므로 가상 경로가 아닌 물리적인 실제 경로를 사용
@@ -99,7 +99,7 @@ public class FileFolderService {
 
     public FileDownloadResponse downloadFile(Long fileId, String userName) {
         // 파일 확인 및 권한 검사
-        FileFolder fileFolder = getFileForDownloadAfterCheck(fileId, userName);
+        FileFolder fileFolder = getFileFolderForDownloadAfterCheck(fileId, userName);
 
         String originalFileName = fileFolder.getOriginalName();
         String saveFileName = fileFolder.getStoredName();
@@ -137,7 +137,7 @@ public class FileFolderService {
         // 1. 파일 시스템에서 물리적 폴더 생성 -> 가상 폴더 구조를 사용하고 있으므로 물리적 폴더 생성은 필요 없음
 
         // 2. DB 에 폴더 메타데이터 저장
-        FileFolder savedFileFolder = saveFolderMetadataToDB(folderCreateRequest, folderName, folderLogicalPath, parentId, userName);
+        FileFolder savedFileFolder = saveFileFolderMetadataToDB(folderCreateRequest, folderName, folderLogicalPath, parentId, userName);
 
         // 3. 부모 폴더에 자식 폴더 id 추가
         if (parentId != null) {
@@ -154,7 +154,7 @@ public class FileFolderService {
         String newFolderName = request.newFolderName();
 
         // 파일 확인 및 권한 검사
-        FileFolder fileFolder = getFileForUpdateAfterCheck(folderId, userName);
+        FileFolder fileFolder = getFileFolderForUpdateAfterCheck(folderId, userName);
 
         // 이미 존재하는 이름으로 변경할 경우 오류
         checkDuplicateFolderName(newFolderName, fileFolder.getParentId());
@@ -304,30 +304,19 @@ public class FileFolderService {
     폴더 생성 관련 메서드
      */
 
-    private void savePhysicalFolder(String folderPath) throws IOException {
-        Files.createDirectory(Paths.get(folderPath));
-    }
-
     private static String generateRandomFolderName() {
         // 랜덤한 UUID를 사용하여 폴더 이름 생성
         return UUID.randomUUID().toString().substring(0, 5);
     }
 
-    private FileFolder saveFolderMetadataToDB(FolderCreateRequest folderCreateRequest, String folderName, String folderDir, Long parentId, String userName) {
+    private FileFolder saveFileFolderMetadataToDB(FolderCreateRequest folderCreateRequest, String folderName, String folderDir, Long parentId, String userName) {
         return fileFolderRepository.save(folderCreateRequest.toEntity(folderName, folderDir, parentId, userName));
-    }
-
-    /*
-    폴더 업데이트 관련 메서드
-     */
-    private void updatePhysicalFolderName(String originalFolderPath, String newFolderPath) throws IOException {
-        Files.move(Path.of(originalFolderPath), Path.of(newFolderPath));
     }
 
     /*
      파일 및 폴더 권한 검사 관련 메서드
      */
-    private FileFolder getFileFromDatabase(Long fileId) {
+    private FileFolder getFileFolderFromDatabase(Long fileId) {
         return fileFolderRepository.findById(fileId)
                 .orElseThrow(() -> FileNotFoundException.EXCEPTION);
     }
@@ -346,20 +335,20 @@ public class FileFolderService {
         }
     }
 
-    private FileFolder getFileForDownloadAfterCheck(Long fileId, String userName) {
-        FileFolder fileFolder = getFileFromDatabase(fileId);
+    private FileFolder getFileFolderForDownloadAfterCheck(Long fileId, String userName) {
+        FileFolder fileFolder = getFileFolderFromDatabase(fileId);
         checkOwnership(userName, fileFolder.getUserName(),true, false);
         return fileFolder;
     }
 
-    private FileFolder getFileForDeletionAfterCheck(Long fileId, String userName) {
-        FileFolder fileFolder = getFileFromDatabase(fileId);
+    private FileFolder getFileFolderForDeletionAfterCheck(Long fileId, String userName) {
+        FileFolder fileFolder = getFileFolderFromDatabase(fileId);
         checkOwnership(userName, fileFolder.getUserName(),false, false);
         return fileFolder;
     }
 
-    private FileFolder getFileForUpdateAfterCheck(Long fileId, String userName) {
-        FileFolder fileFolder = getFileFromDatabase(fileId);
+    private FileFolder getFileFolderForUpdateAfterCheck(Long fileId, String userName) {
+        FileFolder fileFolder = getFileFolderFromDatabase(fileId);
         checkOwnership(userName, fileFolder.getUserName(), false, true);
         return fileFolder;
     }
@@ -369,6 +358,5 @@ public class FileFolderService {
             throw FolderNameDuplicateException.EXCEPTION;
         }
     }
-
 
 }
