@@ -9,6 +9,7 @@ import gdsc.be.mount.storage.exception.*;
 import gdsc.be.mount.storage.repository.FileFolderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
@@ -151,7 +152,7 @@ public class FileService {
         }
 
         // 파일명이 비어있는지 확인
-        if (file.getOriginalFilename() == null || file.getOriginalFilename().isEmpty()) {
+        if (StringUtils.isEmpty(file.getOriginalFilename())) {
             throw new FileEmptyException();
         }
 
