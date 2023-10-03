@@ -11,13 +11,13 @@ public record FileUploadRequest(
         Long parentId, // File 은 childId 가 없음
         String userName
 ) {
-    public FileFolder toEntity(String originalFileName, String storeFileName, String filePath, long fileSize, String fileType){
+    public FileFolder toEntity(String originalFileName, String storeFileName, String logicalFilePath, long fileSize, String fileType){
         return FileFolder.builder()
                 .fileFolderType(FileFolderType.FILE)
                 .parentId(parentId)
                 .originalName(originalFileName)
                 .storedName(storeFileName)
-                .path(filePath)
+                .path(logicalFilePath)
                 .size(fileSize)
                 .contentType(fileType)
                 .uploadTime(LocalDateTime.now())

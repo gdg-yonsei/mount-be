@@ -1,6 +1,5 @@
 package gdsc.be.mount.storage.service;
 
-import gdsc.be.mount.storage.Enum.FileFolderType;
 import gdsc.be.mount.storage.dto.request.FileFolderUpdateRequest;
 import gdsc.be.mount.storage.dto.request.FileUploadRequest;
 import gdsc.be.mount.storage.dto.request.FolderCreateRequest;
@@ -26,7 +25,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -45,28 +43,34 @@ public class FileFolderService {
 
         validate(file); // 파일 유효성 검사
 
-        String userName = fileUploadRequest.userName();
         Long parentId = fileUploadRequest.parentId();
 
         String originalFileName = file.getOriginalFilename(); // 사용자가 등록한 최초 파일명
         String storeFileName = createStoreFileName(originalFileName); // 서버 내부에서 관리할 파일명
-        String filePath = getFullPath(storeFileName, parentId); // 파일이 저장될 경로
+        String logicalFilePath = getFullLogicalPath(storeFileName, parentId); // 파일의 논리적 경로
+        String physicalFilePath = uploadPath + storeFileName; // 파일의 물리적 경로
 
-        log.debug("[uploadFile] originalFileName: {}, filePath: {}", originalFileName, filePath);
+        log.debug("[uploadFile] originalFileName: {}, logicalFilePath: {}", originalFileName, logicalFilePath);
 
         try {
             // 1. 파일 시스템에서 물리적 파일 저장
-            savePhysicalFile(file, filePath);
+            savePhysicalFile(file, physicalFilePath);
 
-            // 2. DB 에 파일 메타데이터 저장
-            FileFolder savedFileFolder = saveFileMetadataToDB(fileUploadRequest, originalFileName, storeFileName, filePath, file.getSize(), file.getContentType());
+            try {
+                // 2. DB 에 파일 메타데이터 저장
+                FileFolder savedFileFolder = saveFileMetadataToDB(fileUploadRequest, originalFileName, storeFileName, logicalFilePath, file.getSize(), file.getContentType());
 
-            // 3. 부모 폴더에 자식 폴더 id 추가
-            if(parentId != null){
-                addChildIdIntoParentFolder(parentId, savedFileFolder.getId());
+                // 3. 부모 폴더에 자식 폴더 id 추가
+                if(parentId != null){
+                    addChildIdIntoParentFolder(parentId, savedFileFolder.getId());
+                }
+
+                return FileUploadResponse.fromEntity(savedFileFolder);
+            } catch (Exception dbException) {
+                // 만약 DB에 파일 메타데이터 저장 중에 예외가 발생하면 물리적 파일 삭제 후 예외 다시 던지기
+                deletePhysicalFile(physicalFilePath);
+                throw dbException;
             }
-
-            return FileUploadResponse.fromEntity(savedFileFolder);
         } catch (IOException ex) {
             throw FileUploadException.EXCEPTION;
         }
@@ -76,14 +80,16 @@ public class FileFolderService {
         // 파일 확인 및 권한 검사
         FileFolder fileFolder = getFileForDeletionAfterCheck(fileId, userName);
 
-        log.debug("[deleteFile] FileName: {}", fileFolder.getOriginalName());
+        String deletedFileName = fileFolder.getOriginalName();
+        String physicalFilePath = uploadPath + fileFolder.getStoredName(); // 가상 폴더 구조이므로 가상 경로가 아닌 물리적인 실제 경로를 사용
+        log.debug("[deleteFile] FileName: {}", deletedFileName);
 
         try {
             // 1. DB 에서 파일 메타데이터 삭제
             deleteFileMetadata(fileId);
 
             // 2. 파일 시스템에서 물리적 파일 삭제
-            deletePhysicalFile(fileFolder.getPath());
+            deletePhysicalFile(physicalFilePath);
 
             return fileFolder.getId();
         } catch (IOException ex) {
@@ -97,11 +103,11 @@ public class FileFolderService {
 
         String originalFileName = fileFolder.getOriginalName();
         String saveFileName = fileFolder.getStoredName();
-        String filePath = fileFolder.getPath();
+        String physicalFilePath = uploadPath + saveFileName; // 가상 폴더 구조이므로 가상 경로가 아닌 물리적인 실제 경로를 사용
 
         try {
 
-            UrlResource resource = getResource(filePath);
+            UrlResource resource = getResource(physicalFilePath);
 
             log.debug("[downloadFile] saveFileName: {}, URL Resource: {}", saveFileName, resource);
 
@@ -124,26 +130,22 @@ public class FileFolderService {
         Long parentId = folderCreateRequest.parentId();
 
         String folderName = generateRandomFolderName();
-        String folderPath = getFullPath(folderName, parentId);
+        String folderLogicalPath = getFullLogicalPath(folderName, parentId);
 
-        log.debug("[createFolder] folderName: {}, folderPath: {}", folderName, folderPath);
+        log.debug("[createFolder] folderName: {}, folderPath: {}", folderName, folderLogicalPath);
 
-        try {
-            // 1. 파일 시스템에서 물리적 폴더 생성
-            savePhysicalFolder(folderPath);
+        // 1. 파일 시스템에서 물리적 폴더 생성 -> 가상 폴더 구조를 사용하고 있으므로 물리적 폴더 생성은 필요 없음
 
-            // 2. DB 에 폴더 메타데이터 저장
-            FileFolder savedFileFolder = saveFolderMetadataToDB(folderCreateRequest, folderName, folderPath, parentId, userName);
+        // 2. DB 에 폴더 메타데이터 저장
+        FileFolder savedFileFolder = saveFolderMetadataToDB(folderCreateRequest, folderName, folderLogicalPath, parentId, userName);
 
-            // 3. 부모 폴더에 자식 폴더 id 추가
-            if(parentId != null){
-                addChildIdIntoParentFolder(parentId, savedFileFolder.getId());
-            }
-
-            return FolderCreateResponse.fromEntity(savedFileFolder);
-        } catch (IOException e) {
-            throw FolderCreateException.EXCEPTION;
+        // 3. 부모 폴더에 자식 폴더 id 추가
+        if (parentId != null) {
+            addChildIdIntoParentFolder(parentId, savedFileFolder.getId());
         }
+
+        return FolderCreateResponse.fromEntity(savedFileFolder);
+
     }
 
     public Long updateFolderName(Long folderId, FileFolderUpdateRequest request) {
@@ -158,23 +160,16 @@ public class FileFolderService {
         checkDuplicateFolderName(newFolderName, fileFolder.getParentId());
 
         String originalFolderName = fileFolder.getOriginalName();
-        String originalFolderPath = fileFolder.getPath();
-        String newFolderPath = getFullPath(newFolderName, fileFolder.getParentId());
 
         log.debug("[updateFolderName] FileName: {}, NewFolderName : {}", originalFolderName, newFolderName);
 
-        try {
-            // 1. DB 에서 파일 이름 업데이트 및 폴더 경로 수정
-            fileFolder.updateOriginalNameAndPath(newFolderName, newFolderPath);
-            fileFolderRepository.save(fileFolder);
+        // 1. DB 에서 폴더 이름 수정
+        fileFolder.updateOriginalName(newFolderName);
+        fileFolderRepository.save(fileFolder);
 
-            // 2. 파일 시스템에서 파일 이름 업데이트
-            updatePhysicalFolderName(originalFolderPath, newFolderPath);
+        // 2. 파일 시스템에서 폴더 이름 업데이트 -> 가상 폴더 구조를 사용하고 있으므로 물리적 이름 업데이트는 필요 없음
 
-            return fileFolder.getId();
-        } catch (IOException ex) {
-            throw FolderUpdateException.EXCEPTION;
-        }
+        return fileFolder.getId();
     }
 
     public FolderInfoResponse getFolderMetadata(Long folderId, String userName) {
@@ -225,7 +220,7 @@ public class FileFolderService {
             ext = "txt";
         }
 
-        return UUID.randomUUID().toString() + "." + ext;
+        return UUID.randomUUID().toString().substring(0, 5) + "." + ext;
     }
 
     private String extractExt(String originalFilename) {
@@ -240,12 +235,21 @@ public class FileFolderService {
         return originalFilename.substring(pos + 1);
     }
 
-    private String getFullPath(String storeFileName, Long parentId) {
-        String uploadPath = this.uploadPath;
+    private String getFullLogicalPath(String storeFileName, Long parentId) {
+
+        StringBuilder pathBuilder = new StringBuilder();
+
         if (parentId != null) {
-            uploadPath = getParentFolderOriginalName(parentId) + "/";
+            pathBuilder.append(getParentFolderOriginalName(parentId));
         }
-        return uploadPath + storeFileName;
+
+        if(extractExt(storeFileName).isEmpty()){
+            // 폴더는 끝에 / 가 붙고, 파일은 / 가 붙지 않음
+            storeFileName += "/";
+        }
+        pathBuilder.append(storeFileName);
+
+        return pathBuilder.toString();
     }
 
     private String getParentFolderOriginalName(Long parentId) {
@@ -257,8 +261,8 @@ public class FileFolderService {
         file.transferTo(Files.createFile(Path.of(filePath)));
     }
 
-    private FileFolder saveFileMetadataToDB(FileUploadRequest fileUploadRequest, String originalFileName, String storeFileName, String filePath, long fileSize, String fileType) {
-        return fileFolderRepository.save(fileUploadRequest.toEntity(originalFileName, storeFileName, filePath, fileSize, fileType));
+    private FileFolder saveFileMetadataToDB(FileUploadRequest fileUploadRequest, String originalFileName, String storeFileName, String logicalFilePath, long fileSize, String fileType) {
+        return fileFolderRepository.save(fileUploadRequest.toEntity(originalFileName, storeFileName, logicalFilePath, fileSize, fileType));
     }
 
     private void addChildIdIntoParentFolder(Long parentId, Long childId) {
@@ -306,7 +310,7 @@ public class FileFolderService {
 
     private static String generateRandomFolderName() {
         // 랜덤한 UUID를 사용하여 폴더 이름 생성
-        return UUID.randomUUID().toString();
+        return UUID.randomUUID().toString().substring(0, 5);
     }
 
     private FileFolder saveFolderMetadataToDB(FolderCreateRequest folderCreateRequest, String folderName, String folderDir, Long parentId, String userName) {
