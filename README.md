@@ -20,6 +20,37 @@
 - 존재하지 않는 파일을 다운로드할 경우 ‘FileNotFoundException’ 발셍
 - 본인이 만든 파일이 아닐 경우 ‘FileDownloadNotAllowedException’ 발생 
 
+#### 4. 폴더 생성 기능
+- Logic : 파일 업로드 기능과 동일
+- 최초 폴더 생성 시, 랜덤한 이름으로 지정 (파일 이름 충돌 방지)
+
+#### 5. 폴더 이름 변경 기능
+- 이미 존재하는 폴더를 만들경우 ‘FolderNameDuplicateException’ 발생
+- 폴더 이름 변경 시, 폴더 내 파일들의 경로도 함께 변경
+
+#### 6. 폴더 정보 조회 기능
+- 특정 폴더에 대한 요청 시 폴더에 포함된 파일/폴더의 메타데이터 목록을 반환
+
+
+## API
+#### 파일 
+  1. **파일 업로드 API**
+     - `POST` /api/v1/files/upload?file=example&user=example&parentId=1
+  2. **파일 삭제 API**
+     - `DELETE` /api/v1/files/{fileId}?user=example
+  3. **파일 다운로드 API**
+     - `GET` /api/v1/files/{fileId}/download?user=example
+#### 폴더
+  1. **폴더 생성 API**
+     - `POST` /api/v1/folders?user=example&parentId=1
+  2. **폴더 이름 변경 API**
+     - `PUT` /api/v1/folders/{folderId}?user=example&new=newfoldername
+  3. **특정 폴더에 대한 정보 조회 API**
+     - `GET` /api/v1/folders/{folderId}?user=example
+     - 설명: 특정 폴더 내의 하위 폴더와 파일 목록을 가져올 수 있다.
+
+
+
 ## Test Case
 
 ### Repository 테스트 (JPA CRUD)

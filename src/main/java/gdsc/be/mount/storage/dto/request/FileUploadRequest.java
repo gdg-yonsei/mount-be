@@ -1,28 +1,29 @@
 package gdsc.be.mount.storage.dto.request;
 
-import gdsc.be.mount.storage.entity.File;
+import gdsc.be.mount.storage.Enum.FileFolderType;
+import gdsc.be.mount.storage.entity.FileFolder;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
 
 @Builder
 public record FileUploadRequest(
-        String originalFileName,
-        String storeFileName,
-        String filePath,
-        Long fileSize,
-        String fileType,
-        LocalDateTime uploadTime,
+        Long parentId, // File 은 childId 가 없음
+        @NotBlank
         String userName
 ) {
-    public File toEntity(){
-        return File.builder()
-                .originalFileName(originalFileName)
-                .storeFileName(storeFileName)
-                .filePath(filePath)
-                .fileSize(fileSize)
-                .fileType(fileType)
-                .uploadTime(uploadTime)
+    public FileFolder toEntity(String originalFileName, String storeFileName, String logicalFilePath, long fileSize, String fileType){
+        return FileFolder.builder()
+                .fileFolderType(FileFolderType.FILE)
+                .parentId(parentId)
+                .originalName(originalFileName)
+                .storedName(storeFileName)
+                .path(logicalFilePath)
+                .size(fileSize)
+                .contentType(fileType)
+                .uploadTime(LocalDateTime.now())
                 .userName(userName)
                 .build();
     }
