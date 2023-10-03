@@ -3,10 +3,9 @@ package gdsc.be.mount.storage.dto.request;
 import gdsc.be.mount.storage.Enum.FileFolderType;
 import gdsc.be.mount.storage.entity.FileFolder;
 import lombok.Builder;
-import lombok.Getter;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.ArrayList;
 
 @Builder
 public record FolderCreateRequest (
@@ -18,7 +17,7 @@ public record FolderCreateRequest (
             return FileFolder.builder()
                     .fileFolderType(FileFolderType.FOLDER)
                     .parentId(parentId)
-                    .childIds(null)
+                    .childIds(new ArrayList<>())
                     .originalName(folderName) // 추후 수정 필요
                     .storedName(folderName)
                     .path(folderDir)
