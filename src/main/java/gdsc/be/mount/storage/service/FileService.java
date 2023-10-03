@@ -7,6 +7,7 @@ import gdsc.be.mount.storage.dto.response.FileUploadResponse;
 import gdsc.be.mount.storage.entity.FileFolder;
 import gdsc.be.mount.storage.exception.*;
 import gdsc.be.mount.storage.repository.FileFolderRepository;
+import gdsc.be.mount.storage.util.FileUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -161,7 +162,7 @@ public class FileService {
 
     private String createStoreFileName(String originalFileName){
         // 원본 파일명에서 확장자 추출
-        String ext = extractExt(originalFileName);
+        String ext = FileUtil.extractExt(originalFileName);
 
         // 확장자가 없는 경우 기본 확장자를 사용 (예. txt 로 설정)
         if (ext.isEmpty()) {
@@ -169,18 +170,6 @@ public class FileService {
         }
 
         return UUID.randomUUID().toString().substring(0, 5) + "." + ext;
-    }
-
-    private String extractExt(String originalFilename) {
-        // 확장자 별도 추출
-        int pos = originalFilename.lastIndexOf(".");
-
-        // 확장자가 없는 경우 빈 문자열 반환
-        if (pos == -1 || pos == originalFilename.length() - 1) {
-            return "";
-        }
-
-        return originalFilename.substring(pos + 1);
     }
 
     private String getFullLogicalPath(String userName, String storeFileName, Long parentId) {
@@ -194,7 +183,7 @@ public class FileService {
             pathBuilder.append(userName).append("/");
         }
 
-        if(extractExt(storeFileName).isEmpty()){
+        if(FileUtil.extractExt(storeFileName).isEmpty()){
             // 폴더는 끝에 / 가 붙고, 파일은 / 가 붙지 않음
             storeFileName += "/";
         }
