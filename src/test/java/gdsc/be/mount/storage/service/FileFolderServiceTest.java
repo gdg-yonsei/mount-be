@@ -1,6 +1,7 @@
 package gdsc.be.mount.storage.service;
 
 import gdsc.be.mount.storage.Enum.FileFolderType;
+import gdsc.be.mount.storage.dto.request.FileUploadRequest;
 import gdsc.be.mount.storage.dto.response.FileUploadResponse;
 import gdsc.be.mount.storage.dto.response.FileDownloadResponse;
 import gdsc.be.mount.storage.entity.FileFolder;
@@ -45,6 +46,10 @@ public class FileFolderServiceTest {
         MockMultipartFile multipartFile = new MockMultipartFile(
                 "fileFolder", originalFileName, contentType, content);
         FileFolder fileFolder = createFileEntity();
+        FileUploadRequest fileUploadRequest = FileUploadRequest.builder()
+                .parentId(null)
+                .userName(userName)
+                .build();
 
         when(fileFolderRepository.save(any())).thenReturn(fileFolder);
 
@@ -53,7 +58,7 @@ public class FileFolderServiceTest {
         // doNothing().when(fileFolder).transferTo(any(java.io.FileFolder.class));
 
         // When
-        FileUploadResponse response = fileFolderService.uploadFile(multipartFile, userName, null);
+        FileUploadResponse response = fileFolderService.uploadFile(multipartFile, fileUploadRequest);
 
         // Then
         assertNotNull(response);

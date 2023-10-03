@@ -3,33 +3,26 @@ package gdsc.be.mount.storage.dto.request;
 import gdsc.be.mount.storage.Enum.FileFolderType;
 import gdsc.be.mount.storage.entity.FileFolder;
 import lombok.Builder;
+import lombok.Getter;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Builder
 public record FolderCreateRequest (
-    FileFolderType fileFolderType,
     Long parentId,
-    List<Long> childIds,
-    String originalName,
-    String storedName,
-    String path,
-    //Long size,
-    LocalDateTime uploadTime,
     String userName
 ){
 
-    public FileFolder toEntity() {
+    public FileFolder toEntity(String folderName, String folderDir, Long parentId, String userName) {
             return FileFolder.builder()
-                    .fileFolderType(fileFolderType)
+                    .fileFolderType(FileFolderType.FOLDER)
                     .parentId(parentId)
-                    .childIds(childIds)
-                    .originalName(originalName)
-                    .storedName(storedName)
-                    .path(path)
-                    //.size(size)
-                    .uploadTime(uploadTime)
+                    .childIds(null)
+                    .originalName(folderName) // 추후 수정 필요
+                    .storedName(folderName)
+                    .path(folderDir)
+                    .uploadTime(LocalDateTime.now())
                     .userName(userName)
                     .build();
         }

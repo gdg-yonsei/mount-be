@@ -1,6 +1,7 @@
 package gdsc.be.mount.storage.service;
 
 import gdsc.be.mount.storage.Enum.FileFolderType;
+import gdsc.be.mount.storage.dto.request.FileFolderUpdateRequest;
 import gdsc.be.mount.storage.dto.request.FileUploadRequest;
 import gdsc.be.mount.storage.dto.request.FolderCreateRequest;
 import gdsc.be.mount.storage.dto.response.FileDownloadResponse;
@@ -40,9 +41,12 @@ public class FileFolderService {
     @Value("${upload.path}")
     private String uploadPath;
 
-    public FileUploadResponse uploadFile(MultipartFile file, String userName, Long parentId) {
+    public FileUploadResponse uploadFile(MultipartFile file, FileUploadRequest fileUploadRequest) {
 
         validate(file); // 파일 유효성 검사
+
+        String userName = fileUploadRequest.userName();
+        Long parentId = fileUploadRequest.parentId();
 
         String originalFileName = file.getOriginalFilename(); // 사용자가 등록한 최초 파일명
         String storeFileName = createStoreFileName(originalFileName); // 서버 내부에서 관리할 파일명
@@ -55,7 +59,7 @@ public class FileFolderService {
             savePhysicalFile(file, filePath);
 
             // 2. DB 에 파일 메타데이터 저장
-            FileFolder savedFileFolder = saveFileMetadataToDB(originalFileName, storeFileName, filePath, file.getSize(), file.getContentType(), userName, parentId);
+            FileFolder savedFileFolder = saveFileMetadataToDB(fileUploadRequest, originalFileName, storeFileName, filePath, file.getSize(), file.getContentType());
 
             // 3. 부모 폴더에 자식 폴더 id 추가
             if(parentId != null){
@@ -114,7 +118,10 @@ public class FileFolderService {
         }
     }
 
-    public FolderCreateResponse createFolder(String userName, Long parentId) {
+    public FolderCreateResponse createFolder(FolderCreateRequest folderCreateRequest) {
+
+        String userName = folderCreateRequest.userName();
+        Long parentId = folderCreateRequest.parentId();
 
         String folderName = generateRandomFolderName();
         String folderPath = getFullPath(folderName, parentId);
@@ -126,7 +133,7 @@ public class FileFolderService {
             savePhysicalFolder(folderPath);
 
             // 2. DB 에 폴더 메타데이터 저장
-            FileFolder savedFileFolder = saveFolderMetadataToDB(folderName, folderPath, parentId, userName);
+            FileFolder savedFileFolder = saveFolderMetadataToDB(folderCreateRequest, folderName, folderPath, parentId, userName);
 
             // 3. 부모 폴더에 자식 폴더 id 추가
             if(parentId != null){
@@ -139,7 +146,11 @@ public class FileFolderService {
         }
     }
 
-    public Long updateFolderName(Long folderId, String userName, String newFolderName) {
+    public Long updateFolderName(Long folderId, FileFolderUpdateRequest request) {
+
+        String userName = request.userName();
+        String newFolderName = request.newFolderName();
+
         // 파일 확인 및 권한 검사
         FileFolder fileFolder = getFileForUpdateAfterCheck(folderId, userName);
 
@@ -155,6 +166,7 @@ public class FileFolderService {
         try {
             // 1. DB 에서 파일 이름 업데이트 및 폴더 경로 수정
             fileFolder.updateOriginalNameAndPath(newFolderName, newFolderPath);
+            fileFolderRepository.save(fileFolder);
 
             // 2. 파일 시스템에서 파일 이름 업데이트
             updatePhysicalFolderName(originalFolderPath, newFolderPath);
@@ -169,7 +181,12 @@ public class FileFolderService {
 
         // 추후 수정 : DB Connection 한 번에 처리하도록 두 개의 서브 쿼리를 결합 (UNION)
 
-        FileFolder folder = fileFolderRepository.findByIdAndUserName(folderId, userName);
+        FileFolder folder = fileFolderRepository.findById(folderId).orElseThrow(
+                () -> FileNotFoundException.EXCEPTION
+        );
+        if(!folder.getUserName().equals(userName)){
+            throw FileDownloadNotAllowedException.EXCEPTION;
+        }
         List<FileFolder> childFileFolders = fileFolderRepository.findChildrenByChildIds(folder.getChildIds());
 
         return FolderInfoResponse.fromEntity(folder, childFileFolders);
@@ -240,25 +257,14 @@ public class FileFolderService {
         file.transferTo(Files.createFile(Path.of(filePath)));
     }
 
-    private FileFolder saveFileMetadataToDB(String originalFileName, String storeFileName, String filePath, long fileSize, String fileType, String userName, Long parentId) {
-        FileUploadRequest fileUploadRequest =
-                FileUploadRequest.builder()
-                        .fileFolderType(FileFolderType.FILE)
-                        .parentId(parentId)
-                        .originalName(originalFileName)
-                        .storedName(storeFileName)
-                        .path(filePath)
-                        .size(fileSize)
-                        .contentType(fileType)
-                        .uploadTime(LocalDateTime.now())
-                        .userName(userName)
-                        .build();
-        return fileFolderRepository.save(fileUploadRequest.toEntity());
+    private FileFolder saveFileMetadataToDB(FileUploadRequest fileUploadRequest, String originalFileName, String storeFileName, String filePath, long fileSize, String fileType) {
+        return fileFolderRepository.save(fileUploadRequest.toEntity(originalFileName, storeFileName, filePath, fileSize, fileType));
     }
 
     private void addChildIdIntoParentFolder(Long parentId, Long childId) {
         FileFolder parentFileFolder = fileFolderRepository.findById(parentId).orElseThrow();
         parentFileFolder.addChildId(childId);
+        fileFolderRepository.save(parentFileFolder);
     }
 
     /*
@@ -303,19 +309,8 @@ public class FileFolderService {
         return UUID.randomUUID().toString();
     }
 
-    private FileFolder saveFolderMetadataToDB(String folderName, String folderDir, Long parentId, String userName) {
-        FolderCreateRequest folderCreateRequest
-                = FolderCreateRequest.builder()
-                    .fileFolderType(FileFolderType.FOLDER)
-                    .parentId(parentId)
-                    .childIds(null)
-                    .originalName(folderName) // 추후에 폴더명 변경 기능 추가
-                    .storedName(folderName)
-                    .path(folderDir)
-                    .uploadTime(LocalDateTime.now())
-                    .userName(userName)
-                    .build();
-        return fileFolderRepository.save(folderCreateRequest.toEntity());
+    private FileFolder saveFolderMetadataToDB(FolderCreateRequest folderCreateRequest, String folderName, String folderDir, Long parentId, String userName) {
+        return fileFolderRepository.save(folderCreateRequest.toEntity(folderName, folderDir, parentId, userName));
     }
 
     /*

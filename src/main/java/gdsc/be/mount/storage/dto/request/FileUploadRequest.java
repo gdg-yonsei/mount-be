@@ -8,28 +8,19 @@ import java.time.LocalDateTime;
 
 @Builder
 public record FileUploadRequest(
-        FileFolderType fileFolderType,
-        Long parentId,
-        //Long childId, // File 은 childId 가 없음
-        String originalName,
-        String storedName,
-        String path,
-        Long size,
-        String contentType,
-        LocalDateTime uploadTime,
+        Long parentId, // File 은 childId 가 없음
         String userName
 ) {
-    public FileFolder toEntity(){
+    public FileFolder toEntity(String originalFileName, String storeFileName, String filePath, long fileSize, String fileType){
         return FileFolder.builder()
-                .fileFolderType(fileFolderType)
+                .fileFolderType(FileFolderType.FILE)
                 .parentId(parentId)
-                //.childId(childId)
-                .originalName(originalName)
-                .storedName(storedName)
-                .path(path)
-                .size(size)
-                .contentType(contentType)
-                .uploadTime(uploadTime)
+                .originalName(originalFileName)
+                .storedName(storeFileName)
+                .path(filePath)
+                .size(fileSize)
+                .contentType(fileType)
+                .uploadTime(LocalDateTime.now())
                 .userName(userName)
                 .build();
     }
