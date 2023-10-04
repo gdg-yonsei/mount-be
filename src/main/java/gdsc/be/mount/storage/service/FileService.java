@@ -2,6 +2,7 @@ package gdsc.be.mount.storage.service;
 
 import gdsc.be.mount.storage.Enum.ActionType;
 import gdsc.be.mount.storage.Enum.FileFolderType;
+import gdsc.be.mount.storage.dto.request.FileFolderMoveRequest;
 import gdsc.be.mount.storage.dto.request.FileUploadRequest;
 import gdsc.be.mount.storage.dto.response.FileDownloadResponse;
 import gdsc.be.mount.storage.dto.response.FileUploadResponse;
@@ -23,6 +24,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -134,6 +136,29 @@ public class FileService {
         }
     }
 
+    public Long moveFile(Long fileId, FileFolderMoveRequest request){
+
+        /*
+        가상 폴더 구조이므로 파일 시스템에서 물리적 파일 이동은 없음. DB 에서 파일 메타데이터만 변경
+         */
+
+        FileFolder fileFolder = fileFolderRepository.findById(fileId).orElseThrow();
+        FileFolder newParentFolder = fileFolderRepository.findById(request.newParentFolderId()).orElseThrow();
+        FileFolder oldParentFolder = fileFolderRepository.findById(fileFolder.getParentId()).orElseThrow();
+
+        // 파일 메타데이터 업데이트
+        fileFolder.updatePath(getFullLogicalPath(request.userName(), fileFolder.getStoredName(), request.newParentFolderId()));
+        fileFolder.updateParentId(request.newParentFolderId());
+
+        // 부모 폴더의 childId 목록에서 삭제 후 새 부모 폴더의 childId 목록에 등록
+        oldParentFolder.removeChildId(fileId);
+        newParentFolder.addChildId(fileId);
+
+        // 변경된 폴더 정보 저장
+        fileFolderRepository.saveAll(List.of(fileFolder, oldParentFolder, newParentFolder));
+
+        return fileFolder.getId();
+    }
 
     // ====================================================================================================
 

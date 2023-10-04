@@ -56,4 +56,16 @@ public class FileFolder {
     public void addChildId(Long childId) {
         this.childIds.add(childId);
     }
+
+    public void removeChildId(Long childId) {
+        this.childIds.remove(childId);
+    }
+
+    public void updatePath(String path) {
+        this.path = path;
+    }
+
+    public void updateParentId(Long parentId) {
+        this.parentId = parentId;
+    }
 }

@@ -2,6 +2,7 @@ package gdsc.be.mount.storage.controller;
 
 
 import gdsc.be.mount.global.common.response.SuccessResponse;
+import gdsc.be.mount.storage.dto.request.FileFolderMoveRequest;
 import gdsc.be.mount.storage.dto.request.FileUploadRequest;
 import gdsc.be.mount.storage.dto.response.FileDownloadResponse;
 import gdsc.be.mount.storage.dto.response.FileUploadResponse;
@@ -73,6 +74,21 @@ public class FileController {
                 .status(HttpStatus.OK)
                 .header(HttpHeaders.CONTENT_DISPOSITION, content.contentDisposition())
                 .body(content.urlResource());
+    }
+
+    /**
+     * 파일 이동 기능
+     */
+    @PatchMapping(value = "/{fileId}/move")
+    public ResponseEntity<SuccessResponse<Long>> moveFile(
+            @PathVariable Long fileId,
+            @RequestBody @Valid FileFolderMoveRequest request
+    ) {
+        Long movedFileId = fileService.moveFile(fileId, request);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(SuccessResponse.of(movedFileId));
     }
 
 }

@@ -133,6 +133,7 @@ public class FolderService {
         return fileFolder.getId();
     }
 
+
     // ====================================================================================================
 
     private String getFullLogicalPath(String userName, String storeFileName, Long parentId) {
