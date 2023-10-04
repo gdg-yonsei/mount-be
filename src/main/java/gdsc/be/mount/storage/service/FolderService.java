@@ -9,11 +9,10 @@ import gdsc.be.mount.storage.dto.response.FolderInfoResponse;
 import gdsc.be.mount.storage.entity.FileFolder;
 import gdsc.be.mount.storage.exception.*;
 import gdsc.be.mount.storage.repository.FileFolderRepository;
-import gdsc.be.mount.storage.util.FileUtil;
+import gdsc.be.mount.storage.util.FileFolderUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,7 +44,7 @@ public class FolderService {
         // 만약 부모의 폴더의 주인이 자신이 아니라면 예외 발생
         checkParentFolderOwnershipForUpload(parentId, userName);
 
-        String folderName = generateRandomFolderName();
+        String folderName = FileFolderUtil.generateRandomFolderName();
         String folderLogicalPath = getFullLogicalPath(userName, folderName, parentId);
 
         log.debug("[createFolder] folderName: {}, folderPath: {}", folderName, folderLogicalPath);
@@ -103,9 +102,9 @@ public class FolderService {
             throw new FileFolderUpdateNotAllowedException();
         }
 
-        if(!fileFolder.getUserName().equals(userName)){
-            throw new FileFolderDownloadNotAllowedException();
-        }
+        // 정보를 얻으려는 대상이 자신이 생성한 폴더인지 확인
+        checkOwnership(userName, fileFolder.getUserName(), ActionType.READ);
+
         List<FileFolder> childFileFolders = fileFolderRepository.findChildrenByChildIds(fileFolder.getChildIds());
 
         return FolderInfoResponse.fromEntity(fileFolder, childFileFolders);
@@ -123,6 +122,8 @@ public class FolderService {
         // 삭제하려는 대상이 자신이 생성한 폴더인지 확인
         checkOwnership(userName, fileFolder.getUserName(), ActionType.DELETE);
 
+        log.debug("[deleteFolder] FolderName: {}", fileFolder.getOriginalName());
+
         // 1. DB에서 해당 폴더의 메타데이터 삭제
         fileFolderRepository.delete(fileFolder);
 
@@ -133,18 +134,6 @@ public class FolderService {
     }
 
     // ====================================================================================================
-
-    private String extractExt(String originalFilename) {
-        // 확장자 별도 추출
-        int pos = originalFilename.lastIndexOf(".");
-
-        // 확장자가 없는 경우 빈 문자열 반환
-        if (pos == -1 || pos == originalFilename.length() - 1) {
-            return "";
-        }
-
-        return originalFilename.substring(pos + 1);
-    }
 
     private String getFullLogicalPath(String userName, String storeFileName, Long parentId) {
 
@@ -157,7 +146,7 @@ public class FolderService {
             pathBuilder.append(userName).append("/");
         }
 
-        if(FileUtil.extractExt(storeFileName).isEmpty()){
+        if(FileFolderUtil.extractExt(storeFileName).isEmpty()){
             // 폴더는 끝에 / 가 붙고, 파일은 / 가 붙지 않음
             storeFileName += "/";
         }
@@ -175,11 +164,6 @@ public class FolderService {
         FileFolder parentFileFolder = fileFolderRepository.findById(parentId).orElseThrow();
         parentFileFolder.addChildId(childId);
         fileFolderRepository.save(parentFileFolder);
-    }
-
-    private static String generateRandomFolderName() {
-        // 랜덤한 UUID를 사용하여 폴더 이름 생성
-        return UUID.randomUUID().toString().substring(0, 5);
     }
 
     private FileFolder saveFileFolderMetadataToDB(FolderCreateRequest folderCreateRequest, String folderName, String folderDir, Long parentId, String userName) {
@@ -217,7 +201,7 @@ public class FolderService {
     }
 
     /**
-     * 파일 및 폴더 권한 검사 관련 메서드
+     * 검증 관련 메서드
      */
     private FileFolder getFileFolderFromDatabase(Long fileId) {
         return fileFolderRepository.findById(fileId)
@@ -229,6 +213,7 @@ public class FolderService {
             switch (actionType) {
                 case UPLOAD -> throw new FileFolderUploadNotAllowedException();
                 case UPDATE -> throw new FileFolderUpdateNotAllowedException();
+                case READ -> throw new FileFolderReadNotAllowedException();
                 default -> {
                 }
             }

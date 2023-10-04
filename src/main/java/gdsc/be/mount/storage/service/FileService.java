@@ -8,7 +8,7 @@ import gdsc.be.mount.storage.dto.response.FileUploadResponse;
 import gdsc.be.mount.storage.entity.FileFolder;
 import gdsc.be.mount.storage.exception.*;
 import gdsc.be.mount.storage.repository.FileFolderRepository;
-import gdsc.be.mount.storage.util.FileUtil;
+import gdsc.be.mount.storage.util.FileFolderUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -38,7 +37,7 @@ public class FileService {
 
     public FileUploadResponse uploadFile(MultipartFile file, FileUploadRequest fileUploadRequest) {
 
-        validate(file); // 파일 유효성 검사
+        validateFile(file); // 파일 유효성 검사
 
         Long parentId = fileUploadRequest.parentId();
         String userName = fileUploadRequest.userName();
@@ -50,7 +49,7 @@ public class FileService {
         checkParentFolderOwnershipForUpload(parentId, userName);
 
         String originalFileName = file.getOriginalFilename(); // 사용자가 등록한 최초 파일명
-        String storeFileName = createStoreFileName(originalFileName); // 서버 내부에서 관리할 파일명
+        String storeFileName = FileFolderUtil.generateStoreFileName(originalFileName); // 서버 내부에서 관리할 파일명
         String logicalFilePath = getFullLogicalPath(userName, storeFileName, parentId); // 파일의 논리적 경로
         String physicalFilePath = uploadPath + storeFileName; // 파일의 물리적 경로
 
@@ -95,7 +94,7 @@ public class FileService {
 
         try {
             // 1. DB 에서 파일 메타데이터 삭제
-            deleteFileMetadata(fileId);
+            fileFolderRepository.deleteById(fileId);
 
             // 2. 파일 시스템에서 물리적 파일 삭제
             deletePhysicalFile(physicalFilePath);
@@ -136,41 +135,7 @@ public class FileService {
     }
 
 
-
     // ====================================================================================================
-
-    /*
-    파일 저장 관련 메서드
-     */
-
-    private void validate(MultipartFile file) {
-        // 파일이 존재하는지 확인
-        if (file == null) {
-            throw new FileEmptyException();
-        }
-
-        // 파일명이 비어있는지 확인
-        if (StringUtils.isEmpty(file.getOriginalFilename())) {
-            throw new FileEmptyException();
-        }
-
-        // 파일 크기가 0인지 확인
-        if (file.getSize() == 0) {
-            throw new FileEmptyException();
-        }
-    }
-
-    private String createStoreFileName(String originalFileName){
-        // 원본 파일명에서 확장자 추출
-        String ext = FileUtil.extractExt(originalFileName);
-
-        // 확장자가 없는 경우 기본 확장자를 사용 (예. txt 로 설정)
-        if (ext.isEmpty()) {
-            ext = "txt";
-        }
-
-        return UUID.randomUUID().toString().substring(0, 5) + "." + ext;
-    }
 
     private String getFullLogicalPath(String userName, String storeFileName, Long parentId) {
 
@@ -183,7 +148,7 @@ public class FileService {
             pathBuilder.append(userName).append("/");
         }
 
-        if(FileUtil.extractExt(storeFileName).isEmpty()){
+        if(FileFolderUtil.extractExt(storeFileName).isEmpty()){
             // 폴더는 끝에 / 가 붙고, 파일은 / 가 붙지 않음
             storeFileName += "/";
         }
@@ -211,14 +176,6 @@ public class FileService {
         fileFolderRepository.save(parentFileFolder);
     }
 
-    /*
-    파일 삭제 관련 메서드
-     */
-
-    private void deleteFileMetadata(Long fileId) {
-        fileFolderRepository.deleteById(fileId);
-    }
-
     private void deletePhysicalFile(String filePath) throws IOException {
         Path fileToDelete = Path.of(filePath);
         Files.delete(fileToDelete);
@@ -236,12 +193,25 @@ public class FileService {
         return resource;
     }
 
+
     /**
-     * 파일 및 폴더 권한 검사 관련 메서드
+     * 검증 관련 메서드
      */
-    private FileFolder getFileFolderFromDatabase(Long fileId) {
-        return fileFolderRepository.findById(fileId)
-                .orElseThrow(FileFolderNotFoundException::new);
+    private void validateFile(MultipartFile file) {
+        // 파일이 존재하는지 확인
+        if (file == null) {
+            throw new FileEmptyException();
+        }
+
+        // 파일명이 비어있는지 확인
+        if (StringUtils.isEmpty(file.getOriginalFilename())) {
+            throw new FileEmptyException();
+        }
+
+        // 파일 크기가 0인지 확인
+        if (file.getSize() == 0) {
+            throw new FileEmptyException();
+        }
     }
 
     private void checkOwnership(String userName, String owner, ActionType actionType) {
@@ -274,13 +244,15 @@ public class FileService {
     }
 
     private FileFolder getFileFolderForDownloadAfterCheckOwnership(Long fileId, String userName) {
-        FileFolder fileFolder = getFileFolderFromDatabase(fileId);
+        FileFolder fileFolder = fileFolderRepository.findById(fileId)
+                .orElseThrow(FileFolderNotFoundException::new);
         checkOwnership(userName, fileFolder.getUserName(), ActionType.DOWNLOAD);
         return fileFolder;
     }
 
     private FileFolder getFileFolderForDeletionAfterCheckOwnership(Long fileId, String userName) {
-        FileFolder fileFolder = getFileFolderFromDatabase(fileId);
+        FileFolder fileFolder = fileFolderRepository.findById(fileId)
+                .orElseThrow(FileFolderNotFoundException::new);
         checkOwnership(userName, fileFolder.getUserName(), ActionType.DELETE);
         return fileFolder;
     }
