@@ -68,4 +68,19 @@ public class FolderController {
                 .body(SuccessResponse.of(data));
     }
 
+    /**
+     * 폴더 삭제 기능
+     */
+    @DeleteMapping("/{folderId}")
+    public ResponseEntity<SuccessResponse<Long>> deleteFolder(
+            @PathVariable Long folderId,
+            @RequestParam("user") @NotBlank String userName
+    ) {
+        Long data = folderService.deleteFolder(folderId, userName);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(SuccessResponse.of(data));
+    }
+
 }

@@ -9,6 +9,7 @@ import gdsc.be.mount.storage.dto.response.FolderInfoResponse;
 import gdsc.be.mount.storage.entity.FileFolder;
 import gdsc.be.mount.storage.exception.*;
 import gdsc.be.mount.storage.repository.FileFolderRepository;
+import gdsc.be.mount.storage.util.FileUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,9 +18,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.UUID;
+import java.nio.file.Paths;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -109,6 +111,26 @@ public class FolderService {
         return FolderInfoResponse.fromEntity(fileFolder, childFileFolders);
     }
 
+    public Long deleteFolder(Long folderId, String userName) {
+        FileFolder fileFolder = fileFolderRepository.findById(folderId)
+                .orElseThrow(FileFolderNotFoundException::new);
+
+        // 삭제하려는 대상이 폴더인지 확인
+        if(fileFolder.getFileFolderType() == FileFolderType.FILE){
+            throw new FileFolderDeletionException();
+        }
+
+        // 삭제하려는 대상이 자신이 생성한 폴더인지 확인
+        checkOwnership(userName, fileFolder.getUserName(), ActionType.DELETE);
+
+        // 1. DB에서 해당 폴더의 메타데이터 삭제
+        fileFolderRepository.delete(fileFolder);
+
+        // 2. 하위의 폴더와 파일 삭제 시 DFS 방식으로 처리
+        deleteChildFileFolder(fileFolder);
+
+        return fileFolder.getId();
+    }
 
     // ====================================================================================================
 
@@ -135,7 +157,7 @@ public class FolderService {
             pathBuilder.append(userName).append("/");
         }
 
-        if(extractExt(storeFileName).isEmpty()){
+        if(FileUtil.extractExt(storeFileName).isEmpty()){
             // 폴더는 끝에 / 가 붙고, 파일은 / 가 붙지 않음
             storeFileName += "/";
         }
@@ -162,6 +184,36 @@ public class FolderService {
 
     private FileFolder saveFileFolderMetadataToDB(FolderCreateRequest folderCreateRequest, String folderName, String folderDir, Long parentId, String userName) {
         return fileFolderRepository.save(folderCreateRequest.toEntity(folderName, folderDir, parentId, userName));
+    }
+
+    private void deleteChildFileFolder(FileFolder fileFolder) {
+        Deque<FileFolder> stack = new ArrayDeque<>();
+        stack.push(fileFolder);
+
+        while (!stack.isEmpty()) {
+            FileFolder currentFolder = stack.pop();
+
+            if (currentFolder.getFileFolderType() == FileFolderType.FOLDER) {
+                List<FileFolder> childFileFolders = fileFolderRepository.findChildrenByChildIds(currentFolder.getChildIds());
+
+                // DB 에서 하위 폴더 및 파일들의 메타 데이터 삭제
+                fileFolderRepository.deleteAll(childFileFolders);
+
+                for (FileFolder childFileFolder : childFileFolders) {
+                    stack.push(childFileFolder);
+
+                    // 파일일 경우에만 물리적 파일 삭제 (폴더일 경우 가상 폴더 구조를 사용하므로 물리적 폴더는 삭제 하지 않음)
+                    if (childFileFolder.getFileFolderType() == FileFolderType.FILE) {
+                        Path path = Paths.get(uploadPath, childFileFolder.getStoredName());
+                        try {
+                            Files.delete(path);
+                        } catch (IOException e) {
+                            throw new FileFolderDeletionException();
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**
