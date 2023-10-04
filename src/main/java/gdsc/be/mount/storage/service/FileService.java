@@ -138,24 +138,47 @@ public class FileService {
 
     public Long moveFile(Long fileId, FileFolderMoveRequest request){
 
-        /*
-        가상 폴더 구조이므로 파일 시스템에서 물리적 파일 이동은 없음. DB 에서 파일 메타데이터만 변경
-         */
+        String userName = request.userName();
+        Long newParentFolderId = request.newParentFolderId();
 
-        FileFolder fileFolder = fileFolderRepository.findById(fileId).orElseThrow();
-        FileFolder newParentFolder = fileFolderRepository.findById(request.newParentFolderId()).orElseThrow();
-        FileFolder oldParentFolder = fileFolderRepository.findById(fileFolder.getParentId()).orElseThrow();
+        // 파일 확인 및 권한 검사
+        FileFolder fileFolder = getFileFolderForUpdateAfterCheckOwnership(fileId, userName);
 
-        // 파일 메타데이터 업데이트
-        fileFolder.updatePath(getFullLogicalPath(request.userName(), fileFolder.getStoredName(), request.newParentFolderId()));
-        fileFolder.updateParentId(request.newParentFolderId());
+        // 수정하려는 대상이 파일인지 확인
+        if(fileFolder.getFileFolderType() == FileFolderType.FOLDER){
+            throw new FileFolderDownloadNotAllowedException();
+        }
 
-        // 부모 폴더의 childId 목록에서 삭제 후 새 부모 폴더의 childId 목록에 등록
-        oldParentFolder.removeChildId(fileId);
-        newParentFolder.addChildId(fileId);
+        // 만약 parentId 가 폴더가 아니라면 예외 발생
+        checkIfParentIsFolder(newParentFolderId);
 
-        // 변경된 폴더 정보 저장
-        fileFolderRepository.saveAll(List.of(fileFolder, oldParentFolder, newParentFolder));
+        // 만약 부모의 폴더의 주인이 자신이 아니라면 예외 발생
+        checkParentFolderOwnershipForUpload(newParentFolderId, userName);
+
+        // 부모 폴더가 변경되었을 경우
+        if (fileFolder.getParentId() != newParentFolderId) {
+
+            // 1. 부모 폴더의 childId 목록에서 자식 폴더 id 삭제
+            if (fileFolder.getParentId() != null) {
+                FileFolder oldParentFolder = fileFolderRepository.findById(fileFolder.getParentId()).orElseThrow();
+                oldParentFolder.removeChildId(fileId);
+                fileFolderRepository.save(oldParentFolder);
+            }
+
+            // 2. 새 부모 폴더의 childId 목록에 자식 폴더 id 추가
+            if (newParentFolderId != null) {
+                FileFolder newParentFolder = fileFolderRepository.findById(newParentFolderId).orElseThrow();
+                newParentFolder.addChildId(fileId);
+                fileFolderRepository.save(newParentFolder);
+            }
+
+            // 3. 파일의 메타데이터 업데이트
+            fileFolder.updatePath(getFullLogicalPath(userName, fileFolder.getStoredName(), newParentFolderId));
+            fileFolder.updateParentId(newParentFolderId);
+            fileFolderRepository.save(fileFolder);
+
+            // 4. 파일 시스템에서 폴더 이동 -> 가상 폴더 구조를 사용하고 있으므로 물리적 폴더 이동은 필요 없음
+        }
 
         return fileFolder.getId();
     }
@@ -279,6 +302,13 @@ public class FileService {
         FileFolder fileFolder = fileFolderRepository.findById(fileId)
                 .orElseThrow(FileFolderNotFoundException::new);
         checkOwnership(userName, fileFolder.getUserName(), ActionType.DELETE);
+        return fileFolder;
+    }
+
+    private FileFolder getFileFolderForUpdateAfterCheckOwnership(Long fileId, String userName) {
+        FileFolder fileFolder = fileFolderRepository.findById(fileId)
+                .orElseThrow(FileFolderNotFoundException::new);
+        checkOwnership(userName, fileFolder.getUserName(), ActionType.UPDATE);
         return fileFolder;
     }
 }
