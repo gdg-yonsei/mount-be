@@ -27,6 +27,7 @@ public enum ErrorCode {
     FILEFOLDER_UPLOAD_NOT_ALLOWED         (404, "F004", "Not allowed to upload this file or folder"),
     FILEFOLDER_UPDATE_NOT_ALLOWED         (404, "F005", "Not allowed to update this file or folder"),
     FILEFOLDER_READ_NOT_ALLOWED           (404, "F006", "Not allowed to read this file or folder"),
+    FILEFOLDER_MOVE_NOT_ALLOWED           (404, "F007", "Not allowed to move this file or folder"),
 
     FILEFOLDER_UPLOAD_FAILED              (500, "F004", "File upload failed"),
     FILEFOLDER_DOWNLOAD_FAILED            (500, "F005", "File download failed"),
