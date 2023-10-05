@@ -39,7 +39,7 @@ public class FolderService {
         String userName = folderCreateRequest.userName();
         Long parentId = folderCreateRequest.parentId();
 
-        // 부모 폴더가 있을 경우, 유효성 검증
+        // 부모 폴더에 대한 유효성 검증
         checkParentFolderValidation(parentId, userName);
 
         String folderName = FileFolderUtil.generateRandomFolderName();
@@ -108,15 +108,37 @@ public class FolderService {
         fileFolderRepository.delete(fileFolder);
 
         // 2. 하위의 폴더와 파일 삭제 시 DFS 방식으로 처리
-        deleteChildFileFolder(fileFolder);
+        deleteChildFolder(fileFolder);
 
         return fileFolder.getId();
     }
 
     public Long moveFolder(Long folderId, FileFolderMoveRequest request) {
-        // 폴더 이동 시 하위 폴더 및 파일들도 함께 이동
-    }
+        // 폴더 이동 시 해당 폴더 아래에 있는 하위 폴더 및 파일들도 함께 이동
+        // 가상 폴더 구조를 사용하므로 물리적 폴더 이동은 필요 없고, DB 처리만
 
+        String userName = request.userName();
+        Long newParentFolderId = request.newParentFolderId();
+
+        // 폴더 확인 및 권한 검사
+        FileFolder fileFolder = getFileFolderForUpdateAfterCheckValidation(folderId, userName);
+
+        // 부모 폴더에 대한 유효성 검증
+        checkParentFolderValidation(newParentFolderId, userName);
+
+        // 상위 폴더가 자신의 하위 폴더로 이동할 수 없음. 이 경우 예외처리.
+        if (fileFolder.getChildIds().contains(newParentFolderId)) {
+            throw new FileFolderMoveNotAllowedException();
+        }
+
+        // 부모 폴더가 변경되었을 경우에만 이동으로 판단
+        if (fileFolder.getParentId() != newParentFolderId) {
+            moveFolderToNewParentFolder(fileFolder, newParentFolderId, userName);
+        }
+
+        return fileFolder.getId();
+
+    }
 
     // ====================================================================================================
 
@@ -131,7 +153,7 @@ public class FolderService {
             pathBuilder.append(userName).append("/");
         }
 
-        if(FileFolderUtil.extractExt(storeFileName).isEmpty()){
+        if(FileFolderUtil.isFolder(storeFileName)){
             // 폴더는 끝에 / 가 붙고, 파일은 / 가 붙지 않음
             storeFileName += "/";
         }
@@ -151,35 +173,86 @@ public class FolderService {
         fileFolderRepository.save(parentFileFolder);
     }
 
+    private void removeChildIdFromParentFolder(Long parentId, Long childId) {
+        FileFolder parentFileFolder = fileFolderRepository.findById(parentId).orElseThrow();
+        parentFileFolder.removeChildId(childId);
+        fileFolderRepository.save(parentFileFolder);
+    }
+
     private FileFolder saveFileFolderMetadataToDB(FolderCreateRequest folderCreateRequest, String folderName, String folderDir, Long parentId, String userName) {
         return fileFolderRepository.save(folderCreateRequest.toEntity(folderName, folderDir, parentId, userName));
     }
 
-    private void deleteChildFileFolder(FileFolder fileFolder) {
+    private void deleteChildFolder(FileFolder fileFolder) {
         Deque<FileFolder> stack = new ArrayDeque<>();
         stack.push(fileFolder);
 
         while (!stack.isEmpty()) {
             FileFolder currentFolder = stack.pop();
 
+            // currentFolder 의 메타데이터 삭제
+            fileFolderRepository.delete(currentFolder);
+
+            // currentFolder 의 하위 폴더 및 파일 삭제 로직
+            List<FileFolder> childFileFolders = fileFolderRepository.findChildrenByChildIds(currentFolder.getChildIds());
+            for (FileFolder childFileFolder : childFileFolders) {
+                stack.push(childFileFolder);
+
+                // DB 에서 currentFolder 의 하위 폴더 및 파일 메타데이터 삭제
+                fileFolderRepository.delete(childFileFolder);
+
+                // 폴더일 경우에는 childId 에 해당되는 객체를 stack 에 추가
+                if (childFileFolder.getFileFolderType() == FileFolderType.FOLDER) {
+                    List<FileFolder> grandChildFileFolders = fileFolderRepository.findChildrenByChildIds(childFileFolder.getChildIds());
+                    for (FileFolder grandChildFileFolder : grandChildFileFolders) {
+                        stack.push(grandChildFileFolder);
+                    }
+                }
+
+                // 파일일 경우에만 물리적 파일 삭제 (폴더일 경우 가상 폴더 구조를 사용하므로 물리적 폴더는 삭제 하지 않음)
+                if (childFileFolder.getFileFolderType() == FileFolderType.FILE) {
+                    Path path = Paths.get(uploadPath, childFileFolder.getStoredName());
+                    try {
+                        Files.delete(path);
+                    } catch (IOException e) {
+                        throw new FileFolderDeletionException();
+                    }
+                }
+            }
+        }
+    }
+
+    private void moveFolderToNewParentFolder(FileFolder fileFolder, Long newParentFolderId, String userName) {
+        // 가상 폴더 구조를 사용하므로 물리적 폴더 이동은 필요 없고, DB 처리만
+        // 폴더를 이동할때에 자식 폴더 및 파일들도 함께 이동하고 이를 DFS 방식으로 처리
+
+        Deque<FileFolder> stack = new ArrayDeque<>();
+        stack.push(fileFolder);
+
+        while (!stack.isEmpty()) {
+            FileFolder currentFolder = stack.pop();
+
+            // 1. 부모 폴더의 childId 목록에서 자식 폴더 id 삭제
+            if (currentFolder.getParentId() != null) {
+                removeChildIdFromParentFolder(fileFolder.getParentId(), fileFolder.getId());
+            }
+
+            // 2. 새 부모 폴더의 childId 목록에 자식 폴더 id 추가
+            if (newParentFolderId != null) {
+                addChildIdIntoParentFolder(newParentFolderId, currentFolder.getId());
+            }
+
+            // 3. 폴더의 parentId 와 path 업데이트
+            currentFolder.updateParentId(newParentFolderId);
+            currentFolder.updatePath(getFullLogicalPath(userName, currentFolder.getOriginalName(), newParentFolderId));
+            fileFolderRepository.save(currentFolder);
+
+            // 4. 자식 폴더 및 파일들도 함께 이동
+            // 단, 기존의 hierarchy 구조는 유지
             if (currentFolder.getFileFolderType() == FileFolderType.FOLDER) {
                 List<FileFolder> childFileFolders = fileFolderRepository.findChildrenByChildIds(currentFolder.getChildIds());
-
-                // DB 에서 하위 폴더 및 파일들의 메타 데이터 삭제
-                fileFolderRepository.deleteAll(childFileFolders);
-
                 for (FileFolder childFileFolder : childFileFolders) {
                     stack.push(childFileFolder);
-
-                    // 파일일 경우에만 물리적 파일 삭제 (폴더일 경우 가상 폴더 구조를 사용하므로 물리적 폴더는 삭제 하지 않음)
-                    if (childFileFolder.getFileFolderType() == FileFolderType.FILE) {
-                        Path path = Paths.get(uploadPath, childFileFolder.getStoredName());
-                        try {
-                            Files.delete(path);
-                        } catch (IOException e) {
-                            throw new FileFolderDeletionException();
-                        }
-                    }
                 }
             }
         }
