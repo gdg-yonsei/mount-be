@@ -184,16 +184,17 @@ public class FolderService {
     }
 
     private void deleteChildFolder(FileFolder fileFolder) {
+        // 폴더를 삭제할 때 하위 폴더 및 파일 전체 삭제, 이를 DFS 방식으로 처리
         Deque<FileFolder> stack = new ArrayDeque<>();
         stack.push(fileFolder);
 
         while (!stack.isEmpty()) {
             FileFolder currentFolder = stack.pop();
 
-            // currentFolder 의 메타데이터 삭제
+            // 1. currentFolder 의 메타데이터 삭제
             fileFolderRepository.delete(currentFolder);
 
-            // currentFolder 의 하위 폴더 및 파일 삭제 로직
+            // 2. currentFolder 의 하위 폴더 및 파일 삭제
             List<FileFolder> childFileFolders = fileFolderRepository.findChildrenByChildIds(currentFolder.getChildIds());
             for (FileFolder childFileFolder : childFileFolders) {
                 stack.push(childFileFolder);
@@ -223,39 +224,51 @@ public class FolderService {
     }
 
     private void moveFolderToNewParentFolder(FileFolder fileFolder, Long newParentFolderId, String userName) {
-        // 가상 폴더 구조를 사용하므로 물리적 폴더 이동은 필요 없고, DB 처리만
         // 폴더를 이동할때에 자식 폴더 및 파일들도 함께 이동하고 이를 DFS 방식으로 처리
-
         Deque<FileFolder> stack = new ArrayDeque<>();
         stack.push(fileFolder);
 
+        // 1. 이동 대상인 폴더의 메타데이터 업데이트 (childId 목록 관리 및 parentId, path 업데이트)
+        updateMetadataForMoveFolder(fileFolder, newParentFolderId, userName);
+
         while (!stack.isEmpty()) {
             FileFolder currentFolder = stack.pop();
+            List<FileFolder> childFileFolders = fileFolderRepository.findChildrenByChildIds(currentFolder.getChildIds());
 
-            // 1. 부모 폴더의 childId 목록에서 자식 폴더 id 삭제
-            if (currentFolder.getParentId() != null) {
-                removeChildIdFromParentFolder(fileFolder.getParentId(), fileFolder.getId());
-            }
+            // 2. currentFolder 의 하위 폴더 및 파일 이동
+            for (FileFolder childFileFolder : childFileFolders) {
+                stack.push(childFileFolder);
 
-            // 2. 새 부모 폴더의 childId 목록에 자식 폴더 id 추가
-            if (newParentFolderId != null) {
-                addChildIdIntoParentFolder(newParentFolderId, currentFolder.getId());
-            }
+                // DB 에서 currentFolder 의 하위 폴더 및 파일 메타데이터 업데이트 (path 업데이트만 수행)
+                childFileFolder.updatePath(getFullLogicalPath(userName, childFileFolder.getOriginalName(), childFileFolder.getParentId()));
+                fileFolderRepository.save(childFileFolder);
 
-            // 3. 폴더의 parentId 와 path 업데이트
-            currentFolder.updateParentId(newParentFolderId);
-            currentFolder.updatePath(getFullLogicalPath(userName, currentFolder.getOriginalName(), newParentFolderId));
-            fileFolderRepository.save(currentFolder);
-
-            // 4. 자식 폴더 및 파일들도 함께 이동
-            // 단, 기존의 hierarchy 구조는 유지
-            if (currentFolder.getFileFolderType() == FileFolderType.FOLDER) {
-                List<FileFolder> childFileFolders = fileFolderRepository.findChildrenByChildIds(currentFolder.getChildIds());
-                for (FileFolder childFileFolder : childFileFolders) {
-                    stack.push(childFileFolder);
+                // 폴더일 경우에는 childId 에 해당되는 객체를 stack 에 추가
+                if (childFileFolder.getFileFolderType() == FileFolderType.FOLDER) {
+                    List<FileFolder> grandChildFileFolders = fileFolderRepository.findChildrenByChildIds(childFileFolder.getChildIds());
+                    for (FileFolder grandChildFileFolder : grandChildFileFolders) {
+                        stack.push(grandChildFileFolder);
+                    }
                 }
             }
+
+            // 가상 폴더 구조를 사용하므로 물리적 이동은 없음
         }
+    }
+
+    private void updateMetadataForMoveFolder(FileFolder currentFolder, Long newParentFolderId, String userName) {
+        // 부모 폴더의 childId 목록에서 자식 폴더 id 삭제
+        if (currentFolder.getParentId() != null) {
+            removeChildIdFromParentFolder(currentFolder.getParentId(), currentFolder.getId());
+        }
+        // 새 부모 폴더의 childId 목록에 자식 폴더 id 추가
+        if (newParentFolderId != null) {
+            addChildIdIntoParentFolder(newParentFolderId, currentFolder.getId());
+        }
+        // 폴더의 parentId 와 path 업데이트
+        currentFolder.updateParentId(newParentFolderId);
+        currentFolder.updatePath(getFullLogicalPath(userName, currentFolder.getOriginalName(), newParentFolderId));
+        fileFolderRepository.save(currentFolder);
     }
 
     /**
