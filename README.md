@@ -31,24 +31,43 @@
 #### 6. 폴더 정보 조회 기능
 - 특정 폴더에 대한 요청 시 폴더에 포함된 파일/폴더의 메타데이터 목록을 반환
 
+#### 7. 폴더 삭제
+- 폴더 삭제 시, 하위의 모든 파일, 폴더가 전부 삭제
+  - DFS(Depth-First Search) 알고리즘을 사용하여 폴더 및 그 하위 폴더 및 파일 삭제 수행
+  - 가상 폴더 구조를 사용하므로 물리적인 폴더 삭제는 없음. (단, 하위 파일 삭제 시에는 물리적인 파일 삭제가 필요함.)
+
+#### 8. 파일 이동
+- 파일 이동 구현
+- 가상 폴더 구조를 사용하므로 물리적인 파일 과업 처리 없이, DB metadata 만 update
+
+#### 9. 폴더 이동
+- 폴더 이동 시, 하위의 모든 파일이 전부 이동.
+  - DFS(Depth-First Search) 알고리즘을 사용하여 폴더 및 그 하위 폴더 및 파일 이동 수행
+  - 가상 폴더 구조를 사용하므로 물리적인 파일 과업 처리 없이, DB metadata 만 update
+
 
 ## API
-#### 파일 
-  1. **파일 업로드 API**
-     - `POST` /api/v1/files/upload?file=example&user=example&parentId=1
-  2. **파일 삭제 API**
-     - `DELETE` /api/v1/files/{fileId}?user=example
-  3. **파일 다운로드 API**
-     - `GET` /api/v1/files/{fileId}/download?user=example
-#### 폴더
-  1. **폴더 생성 API**
-     - `POST` /api/v1/folders?user=example&parentId=1
-  2. **폴더 이름 변경 API**
-     - `PUT` /api/v1/folders/{folderId}?user=example&new=newfoldername
-  3. **특정 폴더에 대한 정보 조회 API**
-     - `GET` /api/v1/folders/{folderId}?user=example
-     - 설명: 특정 폴더 내의 하위 폴더와 파일 목록을 가져올 수 있다.
-
+### 1. 파일
+1. **파일 업로드 API**
+    - `POST` /api/v1/files/upload
+2. **파일 삭제 API**
+    - `DELETE` /api/v1/files/{fileId}
+3. **파일 다운로드 API**
+    - `GET` /api/v1/files/{fileId}/download
+4. **파일 이동 API**
+    - `PATCH` /api/v1/files/{fileId}/move 
+### 2. 폴더
+1. **폴더 생성 API**
+    - `POST` /api/v1/folders
+2. **폴더 이름 변경 API**
+    - `PATCH` /api/v1/folders/{folderId}
+3. **특정 폴더에 대한 정보 조회 API**
+    - `GET` /api/v1/folders/{folderId}?user=example
+    - 설명: 특정 폴더 내의 하위 폴더와 파일 목록을 가져올 수 있습니다.
+4. **폴더 삭제 기능**
+    - `DELETE` /api/v1/folders/{folderId}
+5. **폴더 이동 기능**
+    - `PATCH` /api/v1/files/{fileId}/move
 
 
 ## Test Case
