@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import static gdsc.be.mount.storage.util.FileFolderUtil.getResource;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -88,7 +89,7 @@ public class FileServiceTest {
         // When
         when(fileFolderRepository.findById(fileId)).thenReturn(Optional.of(fileFolder));
 
-        when(fileService.getResource(fileFolder.getPath()))
+        when(getResource(fileFolder.getPath()))
                 .thenReturn(new UrlResource("file://" + fileFolder.getPath()));
 
         // When

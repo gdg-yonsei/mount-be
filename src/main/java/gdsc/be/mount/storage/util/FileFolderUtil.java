@@ -1,9 +1,85 @@
 package gdsc.be.mount.storage.util;
 
+import gdsc.be.mount.storage.Enum.ActionType;
+import gdsc.be.mount.storage.exception.*;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.UrlResource;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.UUID;
 
 public class FileFolderUtil {
+
+    @Value("${upload.path}")
+    private static String uploadPath;
+
     public static final String DEFAULT_FILE_EXTENSION = "txt";
+
+    public static void checkOwnership(String userName, String owner, ActionType actionType) {
+        if (!userName.equals(owner)) {
+            switch (actionType) {
+                case UPLOAD -> throw new FileFolderUploadNotAllowedException();
+                case DOWNLOAD -> throw new FileFolderDownloadNotAllowedException();
+                case UPDATE -> throw new FileFolderUpdateNotAllowedException();
+                case DELETE -> throw new FileFolderDeleteNotAllowedException();
+                case READ -> throw new FileFolderReadNotAllowedException();
+                default -> {
+                }
+            }
+        }
+    }
+
+    public static void checkFileValidation(MultipartFile file) {
+        // 파일이 존재하는지 확인
+        if (file == null) {
+            throw new FileEmptyException();
+        }
+
+        // 파일명이 비어있는지 확인
+        if (StringUtils.isEmpty(file.getOriginalFilename())) {
+            throw new FileEmptyException();
+        }
+
+        // 파일 크기가 0인지 확인
+        if (file.getSize() == 0) {
+            throw new FileEmptyException();
+        }
+    }
+
+    public static void savePhysicalFile(MultipartFile file, String storeFileName) throws IOException {
+        // 가상 폴더 구조이므로 가상 경로가 아닌 물리적인 실제 경로를 사용
+        Path path = Paths.get(uploadPath, storeFileName);
+        file.transferTo(Files.createFile(path));
+    }
+
+    public static void deletePhysicalFile(String storeFileName) {
+        // 물리적 파일 삭제
+        // 가상 폴더 구조이므로 가상 경로가 아닌 물리적인 실제 경로를 사용
+        Path path = Paths.get(uploadPath, storeFileName);
+        try {
+            Files.delete(path);
+        } catch (IOException e) {
+            throw new FileFolderDeletionException();
+        }
+    }
+
+    public static UrlResource getResource(String storeFileName) throws IOException {
+        // 가상 폴더 구조이므로 가상 경로가 아닌 물리적인 실제 경로를 사용
+        Path filePath = Paths.get(uploadPath, storeFileName);
+        UrlResource resource = new UrlResource(filePath.toUri());
+
+        // 물리적인 파일이 존재하지 않으면 예외
+        if (!resource.exists()) {
+            throw new FileFolderNotFoundException();
+        }
+
+        return resource;
+    }
 
     public static boolean isFolder(String originalFilename) {
         // 확장자 별도 추출

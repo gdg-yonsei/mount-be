@@ -13,15 +13,12 @@ import gdsc.be.mount.storage.repository.FileFolderRepository;
 import gdsc.be.mount.storage.util.FileFolderUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
+
+import static gdsc.be.mount.storage.util.FileFolderUtil.*;
 
 @Service
 @RequiredArgsConstructor
@@ -30,9 +27,6 @@ import java.util.*;
 public class FolderService {
 
     private final FileFolderRepository fileFolderRepository;
-
-    @Value("${upload.path}")
-    private String uploadPath;
 
     public FolderCreateResponse createFolder(FolderCreateRequest folderCreateRequest) {
 
@@ -104,11 +98,11 @@ public class FolderService {
         log.debug("[deleteFolder] FolderName: {}", fileFolder.getOriginalName());
 
         // 가상 폴더 구조를 사용하고 있으므로 물리적 폴더 삭제는 필요 없음
-        // 1. 삭제 대상 폴더 삭제
+        // 1. 대상 폴더의 삭제
         fileFolderRepository.delete(fileFolder);
 
-        // 2. 하위의 폴더와 파일 삭제
-        deleteChildFolder(fileFolder);
+        // 2. 삭제 대상 폴더의 하위의 폴더와 파일 삭제
+        deleteChildren(fileFolder);
 
         return fileFolder.getId();
     }
@@ -128,6 +122,7 @@ public class FolderService {
         if (fileFolder.getChildIds().contains(newParentFolderId)) {
             throw new FileFolderMoveNotAllowedException();
         }
+        log.debug("[moveFolder] FolderName: {}, NewParentFolderId: {}", fileFolder.getOriginalName(), newParentFolderId);
 
         // 부모 폴더가 변경되었을 경우에만 이동으로 판단하여 이동 작업 수행
         // 가상 폴더 구조를 사용하고 있으므로 물리적 폴더 이동은 필요 없음
@@ -185,7 +180,7 @@ public class FolderService {
         return fileFolderRepository.save(folderCreateRequest.toEntity(folderName, folderDir, parentId, userName));
     }
 
-    private void deleteChildFolder(FileFolder fileFolder) {
+    private void deleteChildren(FileFolder fileFolder) {
         // 폴더를 삭제할 때 하위 폴더 및 파일 전체 삭제, 이를 DFS 방식으로 처리
         Deque<FileFolder> stack = new ArrayDeque<>();
         stack.push(fileFolder);
@@ -212,19 +207,9 @@ public class FolderService {
 
                 // 파일일 경우에만 물리적 파일 삭제 (폴더일 경우 가상 폴더 구조를 사용하므로 물리적 폴더는 삭제 하지 않음)
                 if (childFileFolder.getFileFolderType() == FileFolderType.FILE) {
-                    deletePhysicalFile(childFileFolder);
+                    deletePhysicalFile(childFileFolder.getStoredName());
                 }
             }
-        }
-    }
-
-    private void deletePhysicalFile(FileFolder fileFolder) {
-        // 물리적 파일 삭제
-        Path path = Paths.get(uploadPath, fileFolder.getStoredName());
-        try {
-            Files.delete(path);
-        } catch (IOException e) {
-            throw new FileFolderDeletionException();
         }
     }
 
@@ -276,18 +261,6 @@ public class FolderService {
     /**
      * 검증 관련 메서드
      */
-
-    private void checkOwnership(String userName, String owner, ActionType actionType) {
-        if (!userName.equals(owner)) {
-            switch (actionType) {
-                case UPLOAD -> throw new FileFolderUploadNotAllowedException();
-                case UPDATE -> throw new FileFolderUpdateNotAllowedException();
-                case READ -> throw new FileFolderReadNotAllowedException();
-                default -> {
-                }
-            }
-        }
-    }
 
     private void checkParentFolderValidation(Long parentId, String userName) {
         if(parentId != null){
