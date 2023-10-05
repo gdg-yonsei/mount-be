@@ -46,12 +46,11 @@ public class FolderService {
         String folderLogicalPath = getFullLogicalPath(userName, folderName, parentId);
         log.debug("[createFolder] folderName: {}, folderPath: {}", folderName, folderLogicalPath);
 
-        // 1. 파일 시스템에서 물리적 폴더 생성 -> 가상 폴더 구조를 사용하고 있으므로 물리적 폴더 생성은 필요 없음
-
-        // 2. DB 에 폴더 메타데이터 저장
+        // 가상 폴더 구조를 사용하고 있으므로 물리적 폴더를 생성하지 않음 (DB 에 메타데이터만 저장)
+        // 1. 생성 요청 폴더의 저장
         FileFolder savedFileFolder = saveFileFolderMetadataToDB(folderCreateRequest, folderName, folderLogicalPath, parentId, userName);
 
-        // 3. 부모 폴더에 자식 폴더 id 추가
+        // 2. 생성 대상 폴더 ID 를 부모 폴더의 childId 에 추가
         if (parentId != null) {
             addChildIdIntoParentFolder(parentId, savedFileFolder.getId());
         }
@@ -72,11 +71,10 @@ public class FolderService {
         checkDuplicateFolderName(userName, newFolderName);
         log.debug("[updateFolderName] FileName: {}, NewFolderName : {}", fileFolder.getOriginalName(), newFolderName);
 
-        // 1. DB 에서 폴더 이름 수정
+        // 가상 폴더 구조를 사용하고 있으므로 물리적 이름 업데이트는 필요 없음
+        // 폴더의 메타데이터 업데이트
         fileFolder.updateOriginalName(newFolderName);
         fileFolderRepository.save(fileFolder);
-
-        // 2. 파일 시스템에서 폴더 이름 업데이트 -> 가상 폴더 구조를 사용하고 있으므로 물리적 이름 업데이트는 필요 없음
 
         return fileFolder.getId();
     }
@@ -90,6 +88,7 @@ public class FolderService {
         checkFolderForRead(fileFolder, userName);
         log.debug("[getFolderMetadata] FolderName: {}", fileFolder.getOriginalName());
 
+        // 폴더의 메타데이터 조회
         List<FileFolder> childFileFolders = fileFolderRepository.findChildrenByChildIds(fileFolder.getChildIds());
 
         return FolderInfoResponse.fromEntity(fileFolder, childFileFolders);
@@ -104,18 +103,17 @@ public class FolderService {
         checkFolderForDeletion(fileFolder, userName);
         log.debug("[deleteFolder] FolderName: {}", fileFolder.getOriginalName());
 
-        // 1. DB에서 해당 폴더의 메타데이터 삭제
+        // 가상 폴더 구조를 사용하고 있으므로 물리적 폴더 삭제는 필요 없음
+        // 1. 삭제 대상 폴더 삭제
         fileFolderRepository.delete(fileFolder);
 
-        // 2. 하위의 폴더와 파일 삭제 시 DFS 방식으로 처리
+        // 2. 하위의 폴더와 파일 삭제
         deleteChildFolder(fileFolder);
 
         return fileFolder.getId();
     }
 
     public Long moveFolder(Long folderId, FileFolderMoveRequest request) {
-        // 폴더 이동 시 해당 폴더 아래에 있는 하위 폴더 및 파일들도 함께 이동
-        // 가상 폴더 구조를 사용하므로 물리적 폴더 이동은 필요 없고, DB 처리만
 
         String userName = request.userName();
         Long newParentFolderId = request.newParentFolderId();
@@ -131,13 +129,17 @@ public class FolderService {
             throw new FileFolderMoveNotAllowedException();
         }
 
-        // 부모 폴더가 변경되었을 경우에만 이동으로 판단
+        // 부모 폴더가 변경되었을 경우에만 이동으로 판단하여 이동 작업 수행
+        // 가상 폴더 구조를 사용하고 있으므로 물리적 폴더 이동은 필요 없음
         if (fileFolder.getParentId() != newParentFolderId) {
-            moveFolderToNewParentFolder(fileFolder, newParentFolderId, userName);
+            // 1. 대상 폴더의 이동
+            updateMetadataForMoveFolder(fileFolder, newParentFolderId, userName);
+
+            // 2. 이동 대상 폴더의 하위 폴더 및 파일 이동
+            updateMetadataForMoveChildren(fileFolder, userName);
         }
 
         return fileFolder.getId();
-
     }
 
     // ====================================================================================================
@@ -204,38 +206,38 @@ public class FolderService {
 
                 // 폴더일 경우에는 childId 에 해당되는 객체를 stack 에 추가
                 if (childFileFolder.getFileFolderType() == FileFolderType.FOLDER) {
-                    List<FileFolder> grandChildFileFolders = fileFolderRepository.findChildrenByChildIds(childFileFolder.getChildIds());
-                    for (FileFolder grandChildFileFolder : grandChildFileFolders) {
-                        stack.push(grandChildFileFolder);
-                    }
+                    fileFolderRepository.findChildrenByChildIds(childFileFolder.getChildIds())
+                            .forEach(stack::push);
                 }
 
                 // 파일일 경우에만 물리적 파일 삭제 (폴더일 경우 가상 폴더 구조를 사용하므로 물리적 폴더는 삭제 하지 않음)
                 if (childFileFolder.getFileFolderType() == FileFolderType.FILE) {
-                    Path path = Paths.get(uploadPath, childFileFolder.getStoredName());
-                    try {
-                        Files.delete(path);
-                    } catch (IOException e) {
-                        throw new FileFolderDeletionException();
-                    }
+                    deletePhysicalFile(childFileFolder);
                 }
             }
         }
     }
 
-    private void moveFolderToNewParentFolder(FileFolder fileFolder, Long newParentFolderId, String userName) {
-        // 폴더를 이동할때에 자식 폴더 및 파일들도 함께 이동하고 이를 DFS 방식으로 처리
+    private void deletePhysicalFile(FileFolder fileFolder) {
+        // 물리적 파일 삭제
+        Path path = Paths.get(uploadPath, fileFolder.getStoredName());
+        try {
+            Files.delete(path);
+        } catch (IOException e) {
+            throw new FileFolderDeletionException();
+        }
+    }
+
+    private void updateMetadataForMoveChildren(FileFolder fileFolder, String userName) {
+        // 폴더를 이동할때에 하위의 모든 자식 폴더 및 파일들도 함께 이동, 이를 DFS 방식으로 처리
         Deque<FileFolder> stack = new ArrayDeque<>();
         stack.push(fileFolder);
-
-        // 1. 이동 대상인 폴더의 메타데이터 업데이트 (childId 목록 관리 및 parentId, path 업데이트)
-        updateMetadataForMoveFolder(fileFolder, newParentFolderId, userName);
 
         while (!stack.isEmpty()) {
             FileFolder currentFolder = stack.pop();
             List<FileFolder> childFileFolders = fileFolderRepository.findChildrenByChildIds(currentFolder.getChildIds());
 
-            // 2. currentFolder 의 하위 폴더 및 파일 이동
+            // currentFolder 의 하위 폴더 및 파일 이동
             for (FileFolder childFileFolder : childFileFolders) {
                 stack.push(childFileFolder);
 
@@ -245,10 +247,8 @@ public class FolderService {
 
                 // 폴더일 경우에는 childId 에 해당되는 객체를 stack 에 추가
                 if (childFileFolder.getFileFolderType() == FileFolderType.FOLDER) {
-                    List<FileFolder> grandChildFileFolders = fileFolderRepository.findChildrenByChildIds(childFileFolder.getChildIds());
-                    for (FileFolder grandChildFileFolder : grandChildFileFolders) {
-                        stack.push(grandChildFileFolder);
-                    }
+                    fileFolderRepository.findChildrenByChildIds(childFileFolder.getChildIds())
+                            .forEach(stack::push);
                 }
             }
 
@@ -257,6 +257,8 @@ public class FolderService {
     }
 
     private void updateMetadataForMoveFolder(FileFolder currentFolder, Long newParentFolderId, String userName) {
+        // 이동 대상 폴더의 경우, 메타데이터 수정 시 childId 목록 수정, parentId 수정, path 수정이 필요함
+
         // 부모 폴더의 childId 목록에서 자식 폴더 id 삭제
         if (currentFolder.getParentId() != null) {
             removeChildIdFromParentFolder(currentFolder.getParentId(), currentFolder.getId());

@@ -224,7 +224,7 @@ public class FileService {
         fileFolder.updatePath(getFullLogicalPath(userName, fileFolder.getStoredName(), newParentFolderId));
         fileFolderRepository.save(fileFolder);
 
-        // 4. 파일 시스템에서 폴더 이동 -> 가상 폴더 구조를 사용하고 있으므로 물리적 폴더 이동은 필요 없음
+        // 가상 폴더 구조를 사용하고 있으므로 물리적 폴더 이동은 필요 없음
     }
 
     /**
