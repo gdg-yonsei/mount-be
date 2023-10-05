@@ -43,7 +43,7 @@ public class FileService {
         // 파일 유효성 검사
         checkFileValidation(file);
 
-        // 부모 폴더가 있을 경우, 유효성 검사
+        // 부모 폴더에 대한 유효성 검증
         checkParentFolderValidation(parentId, userName);
 
         String originalFileName = file.getOriginalFilename(); // 사용자가 등록한 최초 파일명
@@ -131,7 +131,7 @@ public class FileService {
         // 파일 확인 및 권한 검사
         FileFolder fileFolder = getFileFolderForUpdateAfterCheckValidation(fileId, userName);
 
-        // 부모 폴더가 있을 경우, 유효성 검사
+        // 부모 폴더에 대한 유효성 검증
         checkParentFolderValidation(newParentFolderId, userName);
 
         log.debug("[moveFile] fileId: {}, newParentFolderId: {}", fileId, newParentFolderId);
@@ -157,7 +157,7 @@ public class FileService {
             pathBuilder.append(userName).append("/");
         }
 
-        if(FileFolderUtil.extractExt(storeFileName).isEmpty()){
+        if(FileFolderUtil.isFolder(storeFileName)){
             // 폴더는 끝에 / 가 붙고, 파일은 / 가 붙지 않음
             storeFileName += "/";
         }
@@ -185,6 +185,12 @@ public class FileService {
         fileFolderRepository.save(parentFileFolder);
     }
 
+    private void removeChildIdFromParentFolder(Long parentId, Long childId) {
+        FileFolder parentFileFolder = fileFolderRepository.findById(parentId).orElseThrow();
+        parentFileFolder.removeChildId(childId);
+        fileFolderRepository.save(parentFileFolder);
+    }
+
     private void deletePhysicalFile(String filePath) throws IOException {
         Path fileToDelete = Path.of(filePath);
         Files.delete(fileToDelete);
@@ -205,21 +211,17 @@ public class FileService {
     private void moveFileToNewParentFolder(FileFolder fileFolder, Long newParentFolderId, String userName) {
         // 1. 부모 폴더의 childId 목록에서 자식 폴더 id 삭제
         if (fileFolder.getParentId() != null) {
-            FileFolder oldParentFolder = fileFolderRepository.findById(fileFolder.getParentId()).orElseThrow();
-            oldParentFolder.removeChildId(fileFolder.getId());
-            fileFolderRepository.save(oldParentFolder);
+            removeChildIdFromParentFolder(fileFolder.getParentId(), fileFolder.getId());
         }
 
         // 2. 새 부모 폴더의 childId 목록에 자식 폴더 id 추가
         if (newParentFolderId != null) {
-            FileFolder newParentFolder = fileFolderRepository.findById(newParentFolderId).orElseThrow();
-            newParentFolder.addChildId(fileFolder.getId());
-            fileFolderRepository.save(newParentFolder);
+            addChildIdIntoParentFolder(newParentFolderId, fileFolder.getId());
         }
 
-        // 3. 파일의 메타데이터 업데이트
-        fileFolder.updatePath(getFullLogicalPath(userName, fileFolder.getStoredName(), newParentFolderId));
+        // 3. 폴더의 parentId 와 path 업데이트
         fileFolder.updateParentId(newParentFolderId);
+        fileFolder.updatePath(getFullLogicalPath(userName, fileFolder.getStoredName(), newParentFolderId));
         fileFolderRepository.save(fileFolder);
 
         // 4. 파일 시스템에서 폴더 이동 -> 가상 폴더 구조를 사용하고 있으므로 물리적 폴더 이동은 필요 없음

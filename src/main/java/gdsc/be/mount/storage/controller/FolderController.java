@@ -1,6 +1,7 @@
 package gdsc.be.mount.storage.controller;
 
 import gdsc.be.mount.global.common.response.SuccessResponse;
+import gdsc.be.mount.storage.dto.request.FileFolderMoveRequest;
 import gdsc.be.mount.storage.dto.request.FileFolderUpdateRequest;
 import gdsc.be.mount.storage.dto.request.FolderCreateRequest;
 import gdsc.be.mount.storage.dto.response.FolderCreateResponse;
@@ -77,6 +78,21 @@ public class FolderController {
             @RequestParam("user") @NotBlank String userName
     ) {
         Long data = folderService.deleteFolder(folderId, userName);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(SuccessResponse.of(data));
+    }
+
+    /**
+     * 폴더 이동 기능
+     */
+    @PatchMapping("/{folderId}/move")
+    public ResponseEntity<SuccessResponse<Long>> moveFolder(
+            @PathVariable Long folderId,
+            @RequestBody @Valid FileFolderMoveRequest request
+    ) {
+        Long data = folderService.moveFolder(folderId, request);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
