@@ -182,9 +182,6 @@ public class FolderService {
     }
 
     private void deleteChildren(FileFolder fileFolder) {
-        // 삭제 대상 폴더의 메타데이터 삭제
-        fileFolderRepository.delete(fileFolder);
-
         // 폴더를 삭제할 때 하위 폴더 및 파일 전체 삭제, 이를 DFS 방식으로 처리
         Deque<FileFolder> stack = new ArrayDeque<>();
         stack.push(fileFolder);
@@ -221,16 +218,14 @@ public class FolderService {
 
             // currentFolder 의 하위 폴더 및 파일 이동
             for (FileFolder childFileFolder : childFileFolders) {
-                stack.push(childFileFolder);
 
-                // DB 에서 currentFolder 의 하위 폴더 및 파일 메타데이터 업데이트 (path 업데이트만 수행)
+                // 파일과 폴더의 경우 모두, 메타데이터 업데이트 (path 업데이트만 수행)
                 childFileFolder.updatePath(getFullLogicalPath(userName, childFileFolder.getOriginalName(), childFileFolder.getParentId()));
                 fileFolderRepository.save(childFileFolder);
 
-                // 폴더일 경우에는 childId 에 해당되는 객체를 stack 에 추가
+                // 폴더일 경우에만 stack 에 추가
                 if (childFileFolder.getFileFolderType() == FileFolderType.FOLDER) {
-                    fileFolderRepository.findChildrenByChildIds(childFileFolder.getChildIds())
-                            .forEach(stack::push);
+                    stack.push(childFileFolder);
                 }
             }
 
