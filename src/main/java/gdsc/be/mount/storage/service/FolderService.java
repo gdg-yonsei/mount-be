@@ -182,28 +182,24 @@ public class FolderService {
     }
 
     private void deleteChildren(FileFolder fileFolder) {
+        // 삭제 대상 폴더의 메타데이터 삭제
+        fileFolderRepository.delete(fileFolder);
+
         // 폴더를 삭제할 때 하위 폴더 및 파일 전체 삭제, 이를 DFS 방식으로 처리
         Deque<FileFolder> stack = new ArrayDeque<>();
         stack.push(fileFolder);
 
         while (!stack.isEmpty()) {
             FileFolder currentFolder = stack.pop();
-
-            // 1. currentFolder 의 메타데이터 삭제
-            fileFolderRepository.delete(currentFolder);
-
-            // 2. currentFolder 의 하위 폴더 및 파일 삭제
             List<FileFolder> childFileFolders = fileFolderRepository.findChildrenByChildIds(currentFolder.getChildIds());
             for (FileFolder childFileFolder : childFileFolders) {
-                stack.push(childFileFolder);
 
                 // DB 에서 currentFolder 의 하위 폴더 및 파일 메타데이터 삭제
                 fileFolderRepository.delete(childFileFolder);
 
-                // 폴더일 경우에는 childId 에 해당되는 객체를 stack 에 추가
+                // 폴더일 경우에는 stack 에 추가
                 if (childFileFolder.getFileFolderType() == FileFolderType.FOLDER) {
-                    fileFolderRepository.findChildrenByChildIds(childFileFolder.getChildIds())
-                            .forEach(stack::push);
+                    stack.push(childFileFolder);
                 }
 
                 // 파일일 경우에만 물리적 파일 삭제 (폴더일 경우 가상 폴더 구조를 사용하므로 물리적 폴더는 삭제 하지 않음)
