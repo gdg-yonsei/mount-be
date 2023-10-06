@@ -27,6 +27,7 @@ import static gdsc.be.mount.storage.util.FileFolderUtil.*;
 public class FolderService {
 
     private final FileFolderRepository fileFolderRepository;
+    private final FileFolderManager fileFolderManager;
 
     public FolderCreateResponse createFolder(FolderCreateRequest folderCreateRequest) {
 
@@ -207,7 +208,7 @@ public class FolderService {
 
                 // 파일일 경우에만 물리적 파일 삭제 (폴더일 경우 가상 폴더 구조를 사용하므로 물리적 폴더는 삭제 하지 않음)
                 if (childFileFolder.getFileFolderType() == FileFolderType.FILE) {
-                    deletePhysicalFile(childFileFolder.getStoredName());
+                    fileFolderManager.deletePhysicalFile(childFileFolder.getStoredName());
                 }
             }
         }

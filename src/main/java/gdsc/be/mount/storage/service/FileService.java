@@ -29,6 +29,7 @@ import static gdsc.be.mount.storage.util.FileFolderUtil.*;
 public class FileService {
 
     private final FileFolderRepository fileFolderRepository;
+    private final FileFolderManager fileFolderManager;
 
     public FileUploadResponse uploadFile(MultipartFile file, FileUploadRequest fileUploadRequest) {
         Long parentId = fileUploadRequest.parentId();
@@ -48,7 +49,7 @@ public class FileService {
 
         try {
             // 1. 파일 시스템에서 물리적 파일 저장
-            savePhysicalFile(file, storeFileName);
+            fileFolderManager.savePhysicalFile(file, storeFileName);
 
             try {
                 // 2. DB 에 파일 메타데이터 저장
@@ -62,7 +63,7 @@ public class FileService {
                 return FileUploadResponse.fromEntity(savedFileFolder);
             } catch (Exception dbException) {
                 // 만약 DB에 파일 메타데이터 저장 중에 예외가 발생하면 물리적 파일 삭제 후 예외 다시 던지기
-                deletePhysicalFile(storeFileName);
+                fileFolderManager.deletePhysicalFile(storeFileName);
                 throw dbException;
             }
         } catch (IOException ex) {
@@ -80,7 +81,7 @@ public class FileService {
         fileFolderRepository.deleteById(fileId);
 
         // 2. 파일 시스템에서 물리적 파일 삭제
-        deletePhysicalFile(fileToDelete.getStoredName());
+        fileFolderManager.deletePhysicalFile(fileToDelete.getStoredName());
 
         return fileToDelete.getId();
     }
@@ -94,7 +95,7 @@ public class FileService {
 
         try {
 
-            UrlResource resource = getResource(storedFileName);
+            UrlResource resource = fileFolderManager.getResource(storedFileName);
 
             log.debug("[downloadFile] saveFileName: {}, URL Resource: {}", storedFileName, resource);
 
