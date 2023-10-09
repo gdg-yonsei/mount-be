@@ -8,6 +8,7 @@ import gdsc.be.mount.storage.exception.FileFolderNotFoundException;
 import gdsc.be.mount.storage.repository.FileFolderRepository;
 import gdsc.be.mount.storage.util.FileFolderUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Component;
@@ -23,6 +24,7 @@ import java.nio.file.Paths;
  */
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class FileFolderManager {
 
     @Value("${upload.path}")
@@ -43,8 +45,13 @@ public class FileFolderManager {
         try {
             Files.delete(path);
         } catch (IOException e) {
-            throw new FileFolderDeletionException();
+            handleFileDeletionError(storeFileName, e);
         }
+    }
+
+    private void handleFileDeletionError(String storeFileName, IOException e) {
+        // 파일 삭제에 실패하더라도 다음 파일 삭제를 진행을 위해 예외를 던지지 않고 에러 로그만을 남김
+        log.error("Error deleting file: " + storeFileName, e);
     }
 
     public UrlResource getResource(String storeFileName) throws IOException {
