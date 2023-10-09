@@ -38,9 +38,7 @@ public class FileService {
         checkFileValidation(file);
 
         // 부모 폴더에 대한 유효성 검증
-        if(parentId != null){
-            fileFolderManager.validateParentFolder(parentId, userName);
-        }
+        fileFolderManager.validateParentFolder(parentId, userName);
 
         String originalFileName = file.getOriginalFilename(); // 사용자가 등록한 최초 파일명
         String storeFileName = generateStoreFileName(originalFileName); // 서버 내부에서 관리할 파일명
@@ -57,9 +55,7 @@ public class FileService {
                 FileFolder savedFileFolder = saveFileMetadataForUploadRequest(fileUploadRequest, originalFileName, storeFileName, logicalFilePath, file.getSize(), file.getContentType());
 
                 // 3. 부모 폴더에 자식 폴더 id 추가
-                if(parentId != null){
-                    fileFolderManager.addChildIdIntoParentFolder(parentId, savedFileFolder.getId(), userName);
-                }
+                fileFolderManager.addChildIdIntoParentFolder(parentId, savedFileFolder.getId(), userName);
 
                 return FileUploadResponse.fromEntity(savedFileFolder);
             } catch (Exception dbException) {
@@ -118,9 +114,8 @@ public class FileService {
         FileFolder fileFolder = getUserFile(fileId, userName);
 
         // 부모 폴더에 대한 유효성 검증
-        if(newParentFolderId != null){
-            fileFolderManager.validateParentFolder(newParentFolderId, userName);
-        }
+        fileFolderManager.validateParentFolder(newParentFolderId, userName);
+
 
         log.debug("[moveFile] fileId: {}, newParentFolderId: {}", fileId, newParentFolderId);
 
@@ -145,14 +140,10 @@ public class FileService {
 
     private void moveFileToNewParentFolder(FileFolder fileFolder, Long newParentFolderId, String userName) {
         // 1. 부모 폴더의 childId 목록에서 자식 폴더 id 삭제
-        if (fileFolder.getParentId() != null) {
-            fileFolderManager.removeChildIdFromParentFolder(fileFolder.getParentId(), fileFolder.getId(), userName);
-        }
+        fileFolderManager.removeChildIdFromParentFolder(fileFolder.getParentId(), fileFolder.getId(), userName);
 
         // 2. 새 부모 폴더의 childId 목록에 자식 폴더 id 추가
-        if (newParentFolderId != null) {
-            fileFolderManager.addChildIdIntoParentFolder(newParentFolderId, fileFolder.getId(), userName);
-        }
+        fileFolderManager.addChildIdIntoParentFolder(newParentFolderId, fileFolder.getId(), userName);
 
         // 3. 폴더의 parentId 와 path 업데이트
         fileFolder.updateParentId(newParentFolderId);

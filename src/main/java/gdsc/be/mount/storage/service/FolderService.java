@@ -33,9 +33,7 @@ public class FolderService {
         Long parentId = folderCreateRequest.parentId();
 
         // 부모 폴더에 대한 유효성 검증
-        if(parentId != null){
-            fileFolderManager.validateParentFolder(parentId, userName);
-        }
+        fileFolderManager.validateParentFolder(parentId, userName);
 
         String folderName = FileFolderUtil.generateRandomFolderName();
         String folderLogicalPath = fileFolderManager.getFullLogicalPath(userName, folderName, parentId);
@@ -46,9 +44,7 @@ public class FolderService {
         FileFolder savedFileFolder = saveFolderMetadataForCreateRequest(folderCreateRequest, folderName, folderLogicalPath, parentId, userName);
 
         // 2. 생성 대상 폴더 ID 를 부모 폴더의 childId 에 추가
-        if (parentId != null) {
-            fileFolderManager.addChildIdIntoParentFolder(parentId, savedFileFolder.getId(), userName);
-        }
+        fileFolderManager.addChildIdIntoParentFolder(parentId, savedFileFolder.getId(), userName);
 
         return FolderCreateResponse.fromEntity(savedFileFolder);
 
@@ -109,9 +105,7 @@ public class FolderService {
         FileFolder fileFolder = getUserFolder(folderId, userName);
 
         // 부모 폴더에 대한 유효성 검증
-        if(newParentFolderId != null){
-            fileFolderManager.validateParentFolder(newParentFolderId, userName);
-        }
+        fileFolderManager.validateParentFolder(newParentFolderId, userName);
 
         // 상위 폴더가 자신의 하위 폴더로 이동할 수 없음. 이 경우 예외처리.
         if (fileFolder.getChildIds().contains(newParentFolderId)) {
@@ -199,13 +193,11 @@ public class FolderService {
         // 이동 대상 폴더의 경우, 메타데이터 수정 시 childId 목록 수정, parentId 수정, path 수정이 필요함
 
         // 부모 폴더의 childId 목록에서 자식 폴더 id 삭제
-        if (currentFolder.getParentId() != null) {
-            fileFolderManager.removeChildIdFromParentFolder(currentFolder.getParentId(), currentFolder.getId(), userName);
-        }
+        fileFolderManager.removeChildIdFromParentFolder(currentFolder.getParentId(), currentFolder.getId(), userName);
+
         // 새 부모 폴더의 childId 목록에 자식 폴더 id 추가
-        if (newParentFolderId != null) {
-            fileFolderManager.addChildIdIntoParentFolder(newParentFolderId, currentFolder.getId(), userName);
-        }
+        fileFolderManager.addChildIdIntoParentFolder(newParentFolderId, currentFolder.getId(), userName);
+
         // 폴더의 parentId 와 path 업데이트
         currentFolder.updateParentId(newParentFolderId);
         currentFolder.updatePath(fileFolderManager.getFullLogicalPath(userName, currentFolder.getOriginalName(), newParentFolderId));

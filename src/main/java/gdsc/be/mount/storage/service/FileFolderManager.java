@@ -66,25 +66,32 @@ public class FileFolderManager {
         }
     }
 
-    public void validateParentFolder(Long fileId, String userName) {
-        fileFolderRepository.findByIdAndTypeAndUserName(fileId, FileFolderType.FOLDER, userName)
-                .orElseThrow(FileFolderNotFoundException::new);
+    public void validateParentFolder(Long parentId, String userName) {
+        if (parentId != null) {
+            // 부모 폴더는 본인이 제작한 폴더여야 함
+            fileFolderRepository.findByIdAndTypeAndUserName(parentId, FileFolderType.FOLDER, userName)
+                    .orElseThrow(FileFolderNotFoundException::new);
+        }
     }
 
     public void addChildIdIntoParentFolder(Long parentId, Long childId, String userName) {
-        // 부모 폴더는 본인이 제작한 폴더여야 함
-        FileFolder parentFileFolder = fileFolderRepository.findByIdAndTypeAndUserName(parentId, FileFolderType.FOLDER, userName)
-                .orElseThrow(FileFolderNotFoundException::new);
-        parentFileFolder.addChildId(childId);
-        fileFolderRepository.save(parentFileFolder);
+        if (parentId != null) {
+            // 부모 폴더는 본인이 제작한 폴더여야 함
+            FileFolder parentFileFolder = fileFolderRepository.findByIdAndTypeAndUserName(parentId, FileFolderType.FOLDER, userName)
+                    .orElseThrow(FileFolderNotFoundException::new);
+            parentFileFolder.addChildId(childId);
+            fileFolderRepository.save(parentFileFolder);
+        }
     }
 
     public void removeChildIdFromParentFolder(Long parentId, Long childId, String userName) {
-        // 부모 폴더는 본인이 제작한 폴더여야 함
-        FileFolder parentFileFolder = fileFolderRepository.findByIdAndTypeAndUserName(parentId, FileFolderType.FOLDER, userName)
-                .orElseThrow(FileFolderNotFoundException::new);
-        parentFileFolder.removeChildId(childId);
-        fileFolderRepository.save(parentFileFolder);
+        if (parentId != null) {
+            // 부모 폴더는 본인이 제작한 폴더여야 함
+            FileFolder parentFileFolder = fileFolderRepository.findByIdAndTypeAndUserName(parentId, FileFolderType.FOLDER, userName)
+                    .orElseThrow(FileFolderNotFoundException::new);
+            parentFileFolder.removeChildId(childId);
+            fileFolderRepository.save(parentFileFolder);
+        }
     }
 
     private String getParentFolderLogicalPath(Long parentId, String userName) {
