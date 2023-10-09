@@ -60,12 +60,12 @@ public class FileFolderUtil {
             ext = DEFAULT_FILE_EXTENSION;
         }
 
-        return UUID.randomUUID().toString().substring(0, 5) + "." + ext;
+        return UUID.randomUUID() + "." + ext;
     }
 
     public static String generateRandomFolderName() {
         // 랜덤한 UUID를 사용하여 폴더 이름 생성
-        return UUID.randomUUID().toString().substring(0, 5);
+        return UUID.randomUUID().toString();
     }
 
 }
