@@ -1,5 +1,6 @@
 package gdsc.be.mount.storage.service;
 
+import gdsc.be.mount.storage.Enum.ActionType;
 import gdsc.be.mount.storage.Enum.FileFolderType;
 import gdsc.be.mount.storage.dto.request.FileFolderMoveRequest;
 import gdsc.be.mount.storage.dto.request.FileFolderUpdateRequest;
@@ -114,7 +115,7 @@ public class FolderService {
 
         // 상위 폴더가 자신의 하위 폴더로 이동할 수 없음. 이 경우 예외처리.
         if (fileFolder.getChildIds().contains(newParentFolderId)) {
-            throw new FileFolderMoveNotAllowedException();
+            throw new FileFolderNotAllowedException(ActionType.MOVE);
         }
         log.debug("[moveFolder] FolderName: {}, NewParentFolderId: {}", fileFolder.getOriginalName(), newParentFolderId);
 
@@ -137,7 +138,7 @@ public class FolderService {
         return fileFolderRepository.findByIdAndTypeAndUserName(fileId, FileFolderType.FOLDER, userName)
                 .orElseThrow(FileFolderNotFoundException::new);
     }
-    
+
     private FileFolder saveFolderMetadataForCreateRequest(FolderCreateRequest folderCreateRequest, String folderName, String folderDir, Long parentId, String userName) {
         return fileFolderRepository.save(folderCreateRequest.toEntity(folderName, folderDir, parentId, userName));
     }
