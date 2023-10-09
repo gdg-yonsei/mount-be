@@ -1,6 +1,5 @@
 package gdsc.be.mount.storage.service;
 
-import gdsc.be.mount.storage.Enum.ActionType;
 import gdsc.be.mount.storage.Enum.FileFolderType;
 import gdsc.be.mount.storage.dto.request.FileFolderMoveRequest;
 import gdsc.be.mount.storage.dto.request.FileUploadRequest;
@@ -39,11 +38,13 @@ public class FileService {
         checkFileValidation(file);
 
         // 부모 폴더에 대한 유효성 검증
-        checkParentFolderValidation(parentId, userName);
+        if(parentId != null){
+            fileFolderManager.validateParentFolder(parentId, userName);
+        }
 
         String originalFileName = file.getOriginalFilename(); // 사용자가 등록한 최초 파일명
         String storeFileName = generateStoreFileName(originalFileName); // 서버 내부에서 관리할 파일명
-        String logicalFilePath = getFullLogicalPath(userName, storeFileName, parentId); // 파일의 논리적 경로
+        String logicalFilePath = fileFolderManager.getFullLogicalPath(userName, storeFileName, parentId); // 파일의 논리적 경로
 
         log.debug("[uploadFile] originalFileName: {}, logicalFilePath: {}", originalFileName, logicalFilePath);
 
@@ -53,11 +54,11 @@ public class FileService {
 
             try {
                 // 2. DB 에 파일 메타데이터 저장
-                FileFolder savedFileFolder = saveFileMetadataToDB(fileUploadRequest, originalFileName, storeFileName, logicalFilePath, file.getSize(), file.getContentType());
+                FileFolder savedFileFolder = saveFileMetadataForUploadRequest(fileUploadRequest, originalFileName, storeFileName, logicalFilePath, file.getSize(), file.getContentType());
 
                 // 3. 부모 폴더에 자식 폴더 id 추가
                 if(parentId != null){
-                    addChildIdIntoParentFolder(parentId, savedFileFolder.getId());
+                    fileFolderManager.addChildIdIntoParentFolder(parentId, savedFileFolder.getId(), userName);
                 }
 
                 return FileUploadResponse.fromEntity(savedFileFolder);
@@ -73,9 +74,8 @@ public class FileService {
 
     public Long deleteFile(Long fileId, String userName) {
         // 파일 확인 및 권한 검사
-        FileFolder fileToDelete = getFileFolderForDeletionAfterCheckValidation(fileId, userName);
-        String deletedFileName = fileToDelete.getOriginalName();
-        log.debug("[deleteFile] FileName: {}", deletedFileName);
+        FileFolder fileToDelete = getUserFile(fileId, userName);
+        log.debug("[deleteFile] FileName: {}", fileToDelete.getOriginalName());
 
         // 1. DB 에서 파일 메타데이터 삭제
         fileFolderRepository.deleteById(fileId);
@@ -88,7 +88,7 @@ public class FileService {
 
     public FileDownloadResponse downloadFile(Long fileId, String userName) {
         // 파일 확인 및 권한 검사
-        FileFolder fileFolder = getFileFolderForDownloadAfterCheckValidation(fileId, userName);
+        FileFolder fileFolder = getUserFile(fileId, userName);
 
         String originalFileName = fileFolder.getOriginalName();
         String storedFileName = fileFolder.getStoredName();
@@ -115,10 +115,12 @@ public class FileService {
         Long newParentFolderId = request.newParentFolderId();
 
         // 파일 확인 및 권한 검사
-        FileFolder fileFolder = getFileFolderForUpdateAfterCheckValidation(fileId, userName);
+        FileFolder fileFolder = getUserFile(fileId, userName);
 
         // 부모 폴더에 대한 유효성 검증
-        checkParentFolderValidation(newParentFolderId, userName);
+        if(newParentFolderId != null){
+            fileFolderManager.validateParentFolder(newParentFolderId, userName);
+        }
 
         log.debug("[moveFile] fileId: {}, newParentFolderId: {}", fileId, newParentFolderId);
 
@@ -132,133 +134,31 @@ public class FileService {
 
     // ====================================================================================================
 
-    private String getFullLogicalPath(String userName, String storeFileName, Long parentId) {
-
-        StringBuilder pathBuilder = new StringBuilder();
-
-        if (parentId != null) {
-            pathBuilder.append(getParentFolderLogicalPath(parentId));
-        } else {
-            // 최상위 위치면 사용자 이름으로 시작
-            pathBuilder.append(userName).append("/");
-        }
-
-        if(isFolder(storeFileName)){
-            // 폴더는 끝에 / 가 붙고, 파일은 / 가 붙지 않음
-            storeFileName += "/";
-        }
-        pathBuilder.append(storeFileName);
-
-        return pathBuilder.toString();
+    private FileFolder getUserFile(Long fileId, String userName) {
+        return fileFolderRepository.findByIdAndTypeAndUserName(fileId, FileFolderType.FILE, userName)
+                .orElseThrow(FileFolderNotFoundException::new);
     }
 
-    private String getParentFolderLogicalPath(Long parentId) {
-        FileFolder parentFileFolder = fileFolderRepository.findById(parentId).orElseThrow();
-        return parentFileFolder.getPath();
-    }
-
-    private FileFolder saveFileMetadataToDB(FileUploadRequest fileUploadRequest, String originalFileName, String storeFileName, String logicalFilePath, long fileSize, String fileType) {
+    private FileFolder saveFileMetadataForUploadRequest(FileUploadRequest fileUploadRequest, String originalFileName, String storeFileName, String logicalFilePath, long fileSize, String fileType) {
         return fileFolderRepository.save(fileUploadRequest.toEntity(originalFileName, storeFileName, logicalFilePath, fileSize, fileType));
-    }
-
-    private void addChildIdIntoParentFolder(Long parentId, Long childId) {
-        FileFolder parentFileFolder = fileFolderRepository.findById(parentId).orElseThrow();
-        parentFileFolder.addChildId(childId);
-        fileFolderRepository.save(parentFileFolder);
-    }
-
-    private void removeChildIdFromParentFolder(Long parentId, Long childId) {
-        FileFolder parentFileFolder = fileFolderRepository.findById(parentId).orElseThrow();
-        parentFileFolder.removeChildId(childId);
-        fileFolderRepository.save(parentFileFolder);
     }
 
     private void moveFileToNewParentFolder(FileFolder fileFolder, Long newParentFolderId, String userName) {
         // 1. 부모 폴더의 childId 목록에서 자식 폴더 id 삭제
         if (fileFolder.getParentId() != null) {
-            removeChildIdFromParentFolder(fileFolder.getParentId(), fileFolder.getId());
+            fileFolderManager.removeChildIdFromParentFolder(fileFolder.getParentId(), fileFolder.getId(), userName);
         }
 
         // 2. 새 부모 폴더의 childId 목록에 자식 폴더 id 추가
         if (newParentFolderId != null) {
-            addChildIdIntoParentFolder(newParentFolderId, fileFolder.getId());
+            fileFolderManager.addChildIdIntoParentFolder(newParentFolderId, fileFolder.getId(), userName);
         }
 
         // 3. 폴더의 parentId 와 path 업데이트
         fileFolder.updateParentId(newParentFolderId);
-        fileFolder.updatePath(getFullLogicalPath(userName, fileFolder.getStoredName(), newParentFolderId));
+        fileFolder.updatePath(fileFolderManager.getFullLogicalPath(userName, fileFolder.getStoredName(), newParentFolderId));
         fileFolderRepository.save(fileFolder);
 
         // 가상 폴더 구조를 사용하고 있으므로 물리적 폴더 이동은 필요 없음
-    }
-
-    /**
-     * 검증 관련 메서드
-     */
-
-    private void checkParentFolderValidation(Long parentId, String userName) {
-        if(parentId != null){
-            // 만약 parentId 가 폴더가 아니라면 예외 발생
-            checkIfParentIsFolder(parentId);
-            // 만약 부모의 폴더의 주인이 자신이 아니라면 예외 발생
-            checkParentFolderOwnershipForUpload(parentId, userName);
-        }
-    }
-
-    private void checkParentFolderOwnershipForUpload(Long parentId, String userName) {
-        FileFolder parentFileFolder = fileFolderRepository.findById(parentId).orElseThrow();
-        checkOwnership(userName, parentFileFolder.getUserName(), ActionType.UPLOAD);
-    }
-
-    private void checkIfParentIsFolder(Long parentId) {
-        FileFolder parentFileFolder = fileFolderRepository.findById(parentId).orElseThrow();
-        if(parentFileFolder.getFileFolderType() == FileFolderType.FILE){
-            throw new FileFolderUploadException();
-        }
-    }
-
-    private FileFolder getFileFolderForDownloadAfterCheckValidation(Long fileId, String userName) {
-        FileFolder fileFolder = fileFolderRepository.findById(fileId)
-                .orElseThrow(FileFolderNotFoundException::new);
-
-        // 다운로드하려는 대상이 파일의 주인이 맞는지 확인
-        checkOwnership(userName, fileFolder.getUserName(), ActionType.DOWNLOAD);
-
-        // 다운로드하려는 대상이 파일인지 확인
-        if(fileFolder.getFileFolderType() == FileFolderType.FOLDER){
-            throw new FileFolderDownloadNotAllowedException();
-        }
-
-        return fileFolder;
-    }
-
-    private FileFolder getFileFolderForDeletionAfterCheckValidation(Long fileId, String userName) {
-        FileFolder fileFolder = fileFolderRepository.findById(fileId)
-                .orElseThrow(FileFolderNotFoundException::new);
-
-        // 삭제하려는 대상이 파일의 주인이 맞는지 확인
-        checkOwnership(userName, fileFolder.getUserName(), ActionType.DELETE);
-
-        // 삭제하려는 대상이 파일인지 확인
-        if(fileFolder.getFileFolderType() == FileFolderType.FOLDER){
-            throw new FileFolderDeleteNotAllowedException();
-        }
-
-        return fileFolder;
-    }
-
-    private FileFolder getFileFolderForUpdateAfterCheckValidation(Long fileId, String userName) {
-        FileFolder fileFolder = fileFolderRepository.findById(fileId)
-                .orElseThrow(FileFolderNotFoundException::new);
-
-        // 수정하려는 대상이 파일의 주인이 맞는지 확인
-        checkOwnership(userName, fileFolder.getUserName(), ActionType.UPDATE);
-
-        // 수정하려는 대상이 파일인지 확인
-        if(fileFolder.getFileFolderType() == FileFolderType.FOLDER){
-            throw new FileFolderDownloadNotAllowedException();
-        }
-
-        return fileFolder;
     }
 }

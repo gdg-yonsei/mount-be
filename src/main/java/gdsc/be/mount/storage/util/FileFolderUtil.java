@@ -11,20 +11,6 @@ public class FileFolderUtil {
 
     public static final String DEFAULT_FILE_EXTENSION = "txt";
 
-    public static void checkOwnership(String userName, String owner, ActionType actionType) {
-        if (!userName.equals(owner)) {
-            switch (actionType) {
-                case UPLOAD -> throw new FileFolderUploadNotAllowedException();
-                case DOWNLOAD -> throw new FileFolderDownloadNotAllowedException();
-                case UPDATE -> throw new FileFolderUpdateNotAllowedException();
-                case DELETE -> throw new FileFolderDeleteNotAllowedException();
-                case READ -> throw new FileFolderReadNotAllowedException();
-                default -> {
-                }
-            }
-        }
-    }
-
     public static void checkFileValidation(MultipartFile file) {
         // 파일이 존재하는지 확인
         if (file == null) {
