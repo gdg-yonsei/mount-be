@@ -57,7 +57,7 @@ public class FileFolderUtil {
 
         // 확장자가 없는 경우 기본 확장자를 사용 (예. txt 로 설정)
         if (ext.isEmpty()) {
-            ext = "txt";
+            ext = DEFAULT_FILE_EXTENSION;
         }
 
         return UUID.randomUUID().toString().substring(0, 5) + "." + ext;
