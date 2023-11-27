@@ -57,7 +57,7 @@ public class FileControllerTest {
     @Test
     @DisplayName("파일 업로드")
     public void upload_file() throws Exception {
-        Resource res = loader.getResource("uploads/xlbRIUQiIP-풀씨 모집 포스터-001.jpg");
+        Resource res = loader.getResource("uploads/3조_프로젝트_1.pdf");
         MockMultipartFile sampleFile = new MockMultipartFile(
                 "file", // The part name should match the server's expected parameter name
                 "filename",
@@ -71,5 +71,4 @@ public class FileControllerTest {
         ResultActions actions = mockMvc.perform(req);
         actions.andExpect(status().isCreated());
     }
-
 }
