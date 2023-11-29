@@ -1,25 +1,16 @@
 package com.gdsc.mount.metadata.controller;
 
 
-import com.gdsc.mount.metadata.dto.CreateMetadataRequest;
 import com.gdsc.mount.metadata.dto.DeleteFileRequest;
-import com.gdsc.mount.metadata.dto.DownloadFileRequest;
 import com.gdsc.mount.metadata.dto.MetadataResponse;
 import com.gdsc.mount.metadata.service.MetadataService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.context.request.WebRequest;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import javax.validation.Valid;
 import java.util.List;
-import java.util.NoSuchElementException;
 
 @Controller
 @RequestMapping("/api/file")
