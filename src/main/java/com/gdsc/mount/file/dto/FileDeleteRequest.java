@@ -1,4 +1,4 @@
-package com.gdsc.mount.metadata.dto;
+package com.gdsc.mount.file.dto;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -7,7 +7,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class DownloadFileRequest {
+public class FileDeleteRequest {
 
     @NotBlank
     private String username;
@@ -18,6 +18,6 @@ public class DownloadFileRequest {
     @NotBlank
     private String fileName;
 
-    protected DownloadFileRequest() {}
+    protected FileDeleteRequest() {}
 
 }

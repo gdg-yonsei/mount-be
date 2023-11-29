@@ -2,8 +2,8 @@ package com.gdsc.mount.metadata.service;
 
 
 import com.gdsc.mount.metadata.domain.Metadata;
-import com.gdsc.mount.metadata.dto.CreateMetadataRequest;
-import com.gdsc.mount.metadata.dto.DeleteFileRequest;
+import com.gdsc.mount.metadata.dto.MetadataCreateRequest;
+import com.gdsc.mount.file.dto.FileDeleteRequest;
 import com.gdsc.mount.metadata.dto.MetadataResponse;
 import com.gdsc.mount.metadata.repository.MetadataRepository;
 import com.gdsc.mount.metadata.vo.CreateMetadataValues;
@@ -42,12 +42,12 @@ public class MetadataService {
                 .collect(Collectors.toList());
     }
 
-    public void createMetadata(CreateMetadataRequest request, MultipartFile file, String fileCode) {
+    public void createMetadata(MetadataCreateRequest request, MultipartFile file, String fileCode) {
         Metadata metadata = new Metadata(new CreateMetadataValues(request, file, fileCode));
         metadataRepository.save(metadata);
     }
 
-    public boolean deleteFile(DeleteFileRequest request, String filePath) throws IOException {
+    public boolean deleteFile(FileDeleteRequest request, String filePath) throws IOException {
         Path file = Path.of(filePath);
         Metadata metadata = findByPathIfOwner(request.getUsername(), request.getPath() + request.getFileName());
         metadataRepository.deleteById(metadata.get_id());

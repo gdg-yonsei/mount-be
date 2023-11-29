@@ -1,8 +1,8 @@
 package com.gdsc.mount.file.service;
 
 import com.gdsc.mount.metadata.domain.Metadata;
-import com.gdsc.mount.metadata.dto.DeleteFileRequest;
-import com.gdsc.mount.metadata.dto.DownloadFileRequest;
+import com.gdsc.mount.file.dto.FileDeleteRequest;
+import com.gdsc.mount.file.dto.FileDownloadRequest;
 import com.gdsc.mount.metadata.service.MetadataService;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -38,14 +38,14 @@ public class FileService {
         return fileCode;
     }
 
-    public Resource downloadFile(DownloadFileRequest request) throws IOException {
+    public Resource downloadFile(FileDownloadRequest request) throws IOException {
         Metadata metadata = metadataService.findByPathIfOwner(request.getUsername(), request.getPath()+request.getFileName());
         Path foundFile = Paths.get(ROOT+request.getPath());
 
         return new UrlResource(foundFile.toUri());
     }
 
-    public String deleteFile(DeleteFileRequest request) throws IOException, NoSuchFileException {
+    public String deleteFile(FileDeleteRequest request) throws IOException, NoSuchFileException {
         Path filePath = Paths.get(ROOT + request.getPath());
         Metadata metadata = metadataService.findByPathIfOwner(request.getUsername(), request.getPath() + request.getFileName());
         Path file = filePath.resolve(metadata.get_id());

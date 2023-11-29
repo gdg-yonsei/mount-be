@@ -4,12 +4,12 @@ import javax.validation.constraints.NotBlank;
 import lombok.Getter;
 
 @Getter
-public class CreateMemberRequest {
+public class MemberCreateRequest {
 
     @NotBlank
     private String username;
-    protected CreateMemberRequest() {};
-    public CreateMemberRequest(String username) {
+    protected MemberCreateRequest() {};
+    public MemberCreateRequest(String username) {
         this.username = username;
     }
 }

@@ -2,6 +2,8 @@ package com.gdsc.mount.metadata.domain;
 
 import com.gdsc.mount.common.domain.TimestampEntity;
 import com.gdsc.mount.metadata.vo.CreateMetadataValues;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -9,25 +11,19 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.validation.constraints.NotNull;
-
 @Document(collection = "metadata")
 @Getter
 public class Metadata extends TimestampEntity {
     @Id
     private String _id;
 
-    @NotNull
+    @NotBlank
     @Field(name = "name")
     private String name;
 
     @NotNull
     @Field(name = "path_with_file")
     private String pathWithFile;
-
-    @NotNull
-    @Field(name = "at_root")
-    private boolean atRoot;
 
     @NotNull
     @Field(name = "username")
@@ -42,14 +38,13 @@ public class Metadata extends TimestampEntity {
 
     protected Metadata() {}
 
-    public Metadata(String _id, String name, String pathWithFile, boolean atRoot, String username, MultipartFile file) {
+    public Metadata(String _id, String name, String pathWithFile, String username, MultipartFile file) {
         this._id = _id;
         this.username = username;
         this.contentType = file.getContentType();
         this.sizeInBytes = file.getSize();
         this.name = name;
         this.pathWithFile = pathWithFile;
-        this.atRoot = atRoot;
     }
 
     public Metadata(CreateMetadataValues values) {
@@ -59,7 +54,6 @@ public class Metadata extends TimestampEntity {
         this.sizeInBytes = values.getFile().getSize();
         this.name = values.getName();
         this.pathWithFile = values.getPath() + values.getName();
-        this.atRoot = values.isAtRoot();
     }
 
 

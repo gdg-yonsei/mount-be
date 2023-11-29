@@ -1,11 +1,14 @@
-package com.gdsc.mount.member;
+package com.gdsc.mount.file;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gdsc.mount.member.dto.MemberCreateRequest;
+import com.gdsc.mount.directory.dto.DirectoryCreateRequest;
+import com.gdsc.mount.directory.repository.DirectoryRepository;
+import com.gdsc.mount.member.domain.Member;
 import com.gdsc.mount.member.repository.MemberRepository;
-import com.gdsc.mount.member.service.MemberService;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,25 +25,31 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 @ExtendWith(SpringExtension.class)
 @AutoConfigureDataMongo
 @AutoConfigureMockMvc
-public class MemberControllerTest {
+public class DirectoryControllerTest {
     @Autowired
     private MemberRepository memberRepository;
 
     @Autowired
-    private MemberService memberService;
+    private DirectoryRepository directoryRepository;
 
     @Autowired
     MockMvc mockMvc;
 
+    @BeforeEach
+    public void init() {
+        String username = "becooq81";
+        memberRepository.save(new Member(username));
+    }
+
     @Test
-    @DisplayName("회원 가입")
-    void register_member() throws Exception {
-        String username = "test";
+    @DisplayName("디렉토리 생성")
+    public void create_directory() throws Exception {
         mockMvc.perform(
-                MockMvcRequestBuilders.post("/api/member/new")
+                MockMvcRequestBuilders.post("/api/directory/new")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(asJsonString(new MemberCreateRequest(username)))
-        ).andExpect(status().is2xxSuccessful());
+                .content(asJsonString(new DirectoryCreateRequest("/test/", "username")))
+        ).andExpect(status().isOk());
+        Assertions.assertTrue(directoryRepository.existsByPathIncludingDirectory("/test/"));
     }
 
     private static String asJsonString(final Object obj) {
@@ -50,6 +59,4 @@ public class MemberControllerTest {
             throw new RuntimeException(e);
         }
     }
-
-
 }

@@ -9,7 +9,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class CreateMetadataRequest  {
+public class MetadataCreateRequest {
     @NodeNameValidation
     private String name;
 
@@ -19,8 +19,5 @@ public class CreateMetadataRequest  {
     @NotNull
     private String path;
 
-    @NotNull
-    private boolean atRoot;
-
-    protected CreateMetadataRequest() {}
+    protected MetadataCreateRequest() {}
 }

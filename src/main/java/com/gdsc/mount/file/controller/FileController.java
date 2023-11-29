@@ -1,9 +1,9 @@
 package com.gdsc.mount.file.controller;
 
 import com.gdsc.mount.file.service.FileService;
-import com.gdsc.mount.metadata.dto.CreateMetadataRequest;
-import com.gdsc.mount.metadata.dto.DeleteFileRequest;
-import com.gdsc.mount.metadata.dto.DownloadFileRequest;
+import com.gdsc.mount.metadata.dto.MetadataCreateRequest;
+import com.gdsc.mount.file.dto.FileDeleteRequest;
+import com.gdsc.mount.file.dto.FileDownloadRequest;
 import com.gdsc.mount.metadata.service.MetadataService;
 import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,17 +30,16 @@ public class FileController {
     @PostMapping("/upload")
     public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file,
                                              @RequestParam("username") String username,
-                                             @RequestParam("path") String path,
-                                             @RequestParam("atRoot") boolean atRoot) throws Exception {
+                                             @RequestParam("path") String path) throws Exception {
         String fileName = StringUtils.cleanPath(file.getName());
-        CreateMetadataRequest request = new CreateMetadataRequest(fileName, username, path, atRoot);
+        MetadataCreateRequest request = new MetadataCreateRequest(fileName, username, path);
         String fileCode = fileService.uploadFile(file, request.getPath());
         metadataService.createMetadata(request, file, fileCode);
         return ResponseEntity.status(200).body(fileCode);
     }
 
     @GetMapping("/download")
-    public ResponseEntity<?> downloadFile(@RequestBody @Valid DownloadFileRequest request) {
+    public ResponseEntity<?> downloadFile(@RequestBody @Valid FileDownloadRequest request) {
         Resource resource;
         try {
             resource = fileService.downloadFile(request);
@@ -55,7 +54,7 @@ public class FileController {
     }
 
     @DeleteMapping("/delete")
-    public ResponseEntity<String> deleteFile(@RequestBody @Valid DeleteFileRequest request) throws Exception{
+    public ResponseEntity<String> deleteFile(@RequestBody @Valid FileDeleteRequest request) throws Exception{
         String filePath = fileService.deleteFile(request);
         boolean success = metadataService.deleteFile(request, filePath);
         String body = success ? "success" : "fail";
