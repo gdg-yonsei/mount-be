@@ -1,7 +1,6 @@
 package com.gdsc.mount.metadata.controller;
 
 
-import com.gdsc.mount.common.exception.ErrorResponse;
 import com.gdsc.mount.metadata.dto.CreateMetadataRequest;
 import com.gdsc.mount.metadata.dto.DeleteFileRequest;
 import com.gdsc.mount.metadata.dto.DownloadFileRequest;
@@ -39,32 +38,6 @@ public class MetadataController {
     @GetMapping("/all")
     public ResponseEntity<List<MetadataResponse>> findFilesByPage(@RequestParam int page, @RequestParam int size) {
         return ResponseEntity.status(200).body(metadataService.getAllByPage(page, size));
-    }
-
-    // upload file
-    @PostMapping("/upload")
-    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file,
-                                             @RequestBody @Valid CreateMetadataRequest request)
-            throws Exception {
-        String fileName = StringUtils.cleanPath(request.getName());
-        String fileCode = metadataService.uploadFile(file, request);
-        return ResponseEntity.status(201).body(fileCode);
-    }
-
-    // download file
-    @GetMapping("/download")
-    public ResponseEntity<?> downloadFile(@RequestBody @Valid DownloadFileRequest request) {
-        Resource resource;
-        try {
-            resource = metadataService.downloadFile(request);
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body(e.getMessage());
-        }
-        if (resource == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("File not found.");
-        }
-
-        return ResponseEntity.ok().body(resource);
     }
 
     // delete file

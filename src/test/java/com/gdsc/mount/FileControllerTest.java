@@ -1,9 +1,13 @@
 package com.gdsc.mount;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gdsc.mount.member.domain.Member;
 import com.gdsc.mount.member.repository.MemberRepository;
+import com.gdsc.mount.metadata.dto.CreateMetadataRequest;
+import com.gdsc.mount.metadata.dto.DeleteFileRequest;
 import com.gdsc.mount.metadata.repository.MetadataRepository;
 import com.gdsc.mount.metadata.service.MetadataService;
+import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,6 +19,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
@@ -57,18 +62,61 @@ public class FileControllerTest {
     @Test
     @DisplayName("파일 업로드")
     public void upload_file() throws Exception {
-        Resource res = loader.getResource("uploads/3조_프로젝트_1.pdf");
-        MockMultipartFile sampleFile = new MockMultipartFile(
-                "file", // The part name should match the server's expected parameter name
-                "filename",
-                "text/plain",
-                "This is the file content".getBytes()
+        MockMultipartFile multipartFile1 = new MockMultipartFile("file", "file", "text/plain", "test file".getBytes(StandardCharsets.UTF_8));
+        mockMvc.perform(
+                MockMvcRequestBuilders.multipart("/api/file/upload")
+                        .file(multipartFile1)
+                        .param("username", "becooq81")
+                        .param("path", "/file")
+                        .param("atRoot", "false")
+        ).andExpect(status().is2xxSuccessful());
+    }
+
+    // 파일 다운로드
+    @Test
+    @DisplayName("파일 다운로드")
+    public void download_file() throws Exception {
+        MockMultipartFile multipartFile1 = new MockMultipartFile("file", "file", "text/plain", "test file".getBytes(StandardCharsets.UTF_8));
+        mockMvc.perform(
+                MockMvcRequestBuilders.multipart("/api/file/upload")
+                        .file(multipartFile1)
+                        .param("username", "becooq81")
+                        .param("path", "Files-upload")
+                        .param("atRoot", "false")
+        ).andExpect(status().is2xxSuccessful());
+
+        DeleteFileRequest deleteFileRequest = deleteFileRequest();
+
+        RequestBuilder requestBuilder = MockMvcRequestBuilders.get("/api/file/download")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(deleteFileRequest));
+
+        ResultActions resultActions = mockMvc.perform(requestBuilder);
+        resultActions.andExpect(status().isOk());
+    }
+
+    private DeleteFileRequest deleteFileRequest() {
+        return new DeleteFileRequest(
+                "becooq81",
+                "Files-upload/file",
+                "file"
         );
-        RequestBuilder req = MockMvcRequestBuilders
-                .multipart("/api/file/upload")
-                .file(sampleFile)
-                .param("username", "becooq81");
-        ResultActions actions = mockMvc.perform(req);
-        actions.andExpect(status().isCreated());
+    }
+
+    private CreateMetadataRequest createMetadataRequest() {
+        return new CreateMetadataRequest(
+                "file",
+                "becooq81",
+                "/file",
+                true
+        );
+    }
+
+    private static String asJsonString(final Object obj) {
+        try {
+            return new ObjectMapper().writeValueAsString(obj);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

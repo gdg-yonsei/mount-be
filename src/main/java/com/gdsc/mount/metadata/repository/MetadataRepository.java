@@ -12,4 +12,5 @@ import java.util.Optional;
 public interface MetadataRepository extends MongoRepository<Metadata, String> {
     List<Metadata> findAllByName(String name);
     Optional<Metadata> findByPath(String path);
+    boolean existsByPath(String path);
 }
