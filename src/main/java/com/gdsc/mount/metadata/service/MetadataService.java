@@ -10,7 +10,6 @@ import com.gdsc.mount.metadata.vo.CreateMetadataValues;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.io.FileUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;

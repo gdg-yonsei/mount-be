@@ -1,10 +1,8 @@
 package com.gdsc.mount.file.service;
 
 import com.gdsc.mount.metadata.domain.Metadata;
-import com.gdsc.mount.metadata.dto.CreateMetadataRequest;
 import com.gdsc.mount.metadata.dto.DownloadFileRequest;
 import com.gdsc.mount.metadata.service.MetadataService;
-import com.gdsc.mount.metadata.vo.CreateMetadataValues;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;

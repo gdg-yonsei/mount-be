@@ -1,4 +1,4 @@
-package com.gdsc.mount;
+package com.gdsc.mount.file;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
