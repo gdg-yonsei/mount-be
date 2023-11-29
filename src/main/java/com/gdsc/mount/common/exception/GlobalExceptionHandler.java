@@ -21,7 +21,7 @@ public class GlobalExceptionHandler {
     ) {
         ErrorResponse response = ErrorResponse.of(
                 exception,
-                exception.getMessage(),
+                "IO Exception",
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 null
         );
@@ -35,7 +35,7 @@ public class GlobalExceptionHandler {
     ) {
         ErrorResponse response = ErrorResponse.of(
                 exception,
-                "No such element exists.",
+                exception.getMessage(),
                 HttpStatus.NOT_FOUND,
                 request
         );
@@ -69,19 +69,7 @@ public class GlobalExceptionHandler {
                 exception.getMessage(),
                 HttpStatus.BAD_REQUEST,
                 request);
+        exception.getStackTrace();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
-
-    @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ResponseEntity<ErrorResponse> handleAllUncaughtException(
-            Exception exception,
-            WebRequest request){
-        ErrorResponse response = ErrorResponse.of(exception,
-                "An unexpected error occurred.",
-                HttpStatus.INTERNAL_SERVER_ERROR,
-                request);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-    }
-
 }

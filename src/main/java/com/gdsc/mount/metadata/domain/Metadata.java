@@ -1,26 +1,46 @@
 package com.gdsc.mount.metadata.domain;
 
-import com.gdsc.mount.common.domain.Node;
-import com.gdsc.mount.common.domain.NodeType;
-import com.gdsc.mount.directory.domain.Directory;
+import static com.gdsc.mount.directory.service.DirectoryService.nthLastIndexOf;
+
+import com.gdsc.mount.common.domain.TimestampEntity;
+import com.gdsc.mount.directory.vo.DirectoryCreateValues;
+import com.gdsc.mount.metadata.vo.MetadataCreateValues;
+import com.gdsc.mount.validation.annotation.ValidName;
+import com.gdsc.mount.validation.annotation.ValidPath;
+import javax.validation.constraints.NotBlank;
 import lombok.Getter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-import org.springframework.web.multipart.MultipartFile;
-
-import javax.validation.constraints.NotNull;
 
 @Document(collection = "metadata")
 @Getter
-public class Metadata extends Node {
+public class Metadata extends TimestampEntity {
     @Id
     private String _id;
 
-    @NotNull
+    @NotBlank
+    @Field(name = "name")
+    @ValidName
+    private String name;
+
+    @NotBlank
+    @Field(name = "path_with_file")
+    @Indexed(unique = true)
+    @ValidPath
+    private String pathWithFile;
+
+    @NotBlank
+    @Field(name = "path_without_file")
+    @Indexed
+    @ValidPath
+    private String pathWithoutFile;
+
+    @NotBlank
     @Field(name = "username")
     @Indexed(unique = true)
+    @ValidName
     private String username;
 
     @Field(name = "content_type")
@@ -29,18 +49,28 @@ public class Metadata extends Node {
     @Field(name = "size_in_bytes")
     private Long sizeInBytes;
 
-    @Field(name = "download_uri")
-    private String downloadUri;
-
     protected Metadata() {}
 
-    public Metadata(String _id, String name, Directory parentDirectory, String path, boolean atRoot, String username, MultipartFile file, String downloadUri) {
-        super(NodeType.METADATA, name, parentDirectory, path, atRoot);
-        this._id = _id;
-        this.username = username;
-        this.contentType = file.getContentType();
-        this.sizeInBytes = file.getSize();
-        this.downloadUri = downloadUri;
+    public Metadata(MetadataCreateValues values) {
+        this._id = values.getFileCode();
+        this.username = values.getUsername();
+        this.contentType = values.getFile().getContentType();
+        this.sizeInBytes = values.getFile().getSize();
+        this.name = values.getName();
+        this.pathWithFile = values.getPath() + values.getName();
+        this.pathWithoutFile = values.getPath();
+    }
+
+    public Metadata(DirectoryCreateValues values) {
+        this.username = values.getUsername();
+        this.pathWithFile = values.getPathWithDirectory();
+        int idx = nthLastIndexOf(2, "/", values.getPathWithDirectory());
+        this.pathWithoutFile = values.getPathWithDirectory().substring(0, idx+1);
+    }
+
+    public void renameDirectory(String newPathIncludingDirectory, String pathWithoutFile) {
+        this.pathWithFile = newPathIncludingDirectory;
+        this.pathWithoutFile = pathWithoutFile;
     }
 
 

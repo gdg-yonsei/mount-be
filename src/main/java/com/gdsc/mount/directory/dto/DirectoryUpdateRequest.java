@@ -8,13 +8,16 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class DirectoryCreateRequest {
-
+public class DirectoryUpdateRequest {
     @ValidPath
     @NotBlank
-    private String path;
+    private final String pathIncludingDirectory;
 
     @ValidName
     @NotBlank
-    private String username;
+    private final String newDirectoryName;
+
+    @ValidName
+    @NotBlank
+    private final String username;
 }

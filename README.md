@@ -1,67 +1,27 @@
-# mount-be
+# Mount: Step 2
 
-- 프로젝트 설명은 대화방 내 pdf 파일을 참고 바랍니다.
+## 1. 기능
 
-## Branch Guide
+- 사용자는 폴더를 생성하고 소유할 수 있다
+- 폴더는 다른 폴더를 포함할 수 있다
+- 폴더의 이름은 변경될 수 있다
+- 파일은 폴더에 속할 수 있다
+- 폴더 내 컨텐츠를 조회할 수 있다
 
-- gdsc-ys org에 존재하는 레포에 본인의 대표 브랜치를 생성합니다.
-- 이후, 각 Step 마다 해당 브랜치를 베이스로 하는 새로운 브랜치를 생성합니다.
-  - 이 경우, 각 브랜치의 이름은 `feature/{대표 브랜치 이름}_step0` 과 같은 방식으로 생성합니다.
-  - PR은 대표 브랜치 <- Step 브랜치로 진행합니다.
-- 필수적으로 PR Approve를 받아야 합니다. PR을 올리신 이후엔 리뷰어 지정 부탁드립니다. (@jyoo0515, @VSFe) 
+## 2. 구현
 
-## Git Convention
+### (1) 폴더
+폴더는 `DirectoryService`에서 생성되고, 폴더명, 경로, 소유자와 같은 정보는 메타데이터로 저장된다.
+폴더 내에 폴더와 파일을 생성할 수 있으며, 폴더 내에 있는 폴더를 생성하면, 두 폴더 모두 자동으로 생성된다.
 
-### 포맷
+### (2) 폴더 이름 변경
+폴더 이름 변경은 `DirectoryService`에서 이루어진다. 폴더 이름 변경은 폴더의 경로를 변경하는 것과 같다.
 
-```jsx
-type: subject
+### (3) 폴더 내 컨텐츠 조회
+메타데이터에 본 파일/폴더명을 제한 경로를 별도로 저장하여 이를 통해 조회한다.
 
-body
-```
+## 3. 검증
 
-#### type
-
-- 하나의 커밋에 여러 타입이 존재하는 경우 상위 우선순위의 타입을 사용한다.
-- fix: 버스 픽스
-- feat: 새로운 기능 추가
-- refactor: 리팩토링 (버그픽스나 기능추가없는 코드변화)
-- docs: 문서만 변경
-- style: 코드의 의미가 변경 안 되는 경우 (띄어쓰기, 포맷팅, 줄바꿈 등)
-- test: 테스트코드 추가/수정
-- chore: 빌드 테스트 업데이트, 패키지 매니저를 설정하는 경우 (프로덕션 코드 변경 X)
-
-#### subject
-
-- 제목은 50글자를 넘지 않도록 한다.
-- 개조식 구문 사용
-  - 중요하고 핵심적인 요소만 간추려서 (항목별로 나열하듯이) 표현
-- 마지막에 특수문자를 넣지 않는다. (마침표, 느낌표, 물음표 등)
-
-#### body (optional)
-
-- 각 라인별로 balled list로 표시한다.
-  - 예시) - AA
-- 가능하면 한줄당 72자를 넘지 않도록 한다.
-- 본문의 양에 구애받지 않고 최대한 상세히 작성
-- “어떻게” 보다는 “무엇을" “왜” 변경했는지 설명한다.
-
-## Additional Requirement
-
-반드시 수행할 필요는 없지만, 더 나은 BE 개발자가 될 수 있도록 도입을 검토해보면 좋습니다.
-
-- 매 Step 마다 테스트 코드를 작성해보세요.
-- Code Smell 및 Test Coverage 검증을 위한 다양한 도구를 검토해보세요.
-  - Ex) Sonarqube, Qodana
-- Code Convention 을 정의해서 코드를 작성해주세요.
-  - Java
-    - Naver: https://naver.github.io/hackday-conventions-java/
-    - Google: https://google.github.io/styleguide/javaguide.html
-  - Python: https://peps.python.org/pep-0008/
-  - JavaScript
-    - Airbnb: https://github.com/airbnb/javascript
-    - Google: https://google.github.io/styleguide/jsguide.html
-  - ESLint, CheckStyle, EditorConfig 등의 툴을 활용하면 코드 스타일을 강제할 수 있습니다.
-- Webhook을 적극 검토해보세요. CI/CD 결과나, Test Coverage 분석 결과나, PR 요청 등의 작업들에 대해, Discord에 메시지가 올 수 있도록 Webhook을 적용해보면 좋을 겁니다.
-- 가능하면, 다른 분들의 PR도 코멘트를 달아보도록 노력해보세요. 상대방의 코드를 지적하는 것만이 코드 리뷰가 아닙니다. 코드를 보고 배울 점이 있다고 생각해도, 가감없이 코멘트를 달아주세요.
-
+1. 폴더/파일명에 특수문자 등이 포함될 수 없다.
+2. 경로는 무조건 '/'로 시작하고 끝나야 한다.
+3. 폴더/파일명에는 '/'가 연속적으로 포함될 수 없다.

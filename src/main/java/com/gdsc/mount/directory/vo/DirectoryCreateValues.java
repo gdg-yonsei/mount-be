@@ -1,4 +1,4 @@
-package com.gdsc.mount.directory.dto;
+package com.gdsc.mount.directory.vo;
 
 import com.gdsc.mount.validation.annotation.ValidName;
 import com.gdsc.mount.validation.annotation.ValidPath;
@@ -8,13 +8,12 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class DirectoryCreateRequest {
-
-    @ValidPath
+public class DirectoryCreateValues {
     @NotBlank
-    private String path;
-
     @ValidName
-    @NotBlank
     private String username;
+
+    @NotBlank
+    @ValidPath
+    private String pathWithDirectory;
 }
