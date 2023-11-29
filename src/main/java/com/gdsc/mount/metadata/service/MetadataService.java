@@ -1,24 +1,23 @@
 package com.gdsc.mount.metadata.service;
 
 
+import com.gdsc.mount.file.dto.FileDeleteRequest;
 import com.gdsc.mount.metadata.domain.Metadata;
 import com.gdsc.mount.metadata.dto.MetadataCreateRequest;
-import com.gdsc.mount.file.dto.FileDeleteRequest;
 import com.gdsc.mount.metadata.dto.MetadataResponse;
 import com.gdsc.mount.metadata.repository.MetadataRepository;
-import com.gdsc.mount.metadata.vo.CreateMetadataValues;
+import com.gdsc.mount.metadata.vo.MetadataCreateValues;
+import java.io.IOException;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -43,15 +42,16 @@ public class MetadataService {
     }
 
     public void createMetadata(MetadataCreateRequest request, MultipartFile file, String fileCode) {
-        Metadata metadata = new Metadata(new CreateMetadataValues(request, file, fileCode));
+        Metadata metadata = new Metadata(new MetadataCreateValues(request, file, fileCode));
         metadataRepository.save(metadata);
     }
 
     public boolean deleteFile(FileDeleteRequest request, String filePath) throws IOException {
         Path file = Path.of(filePath);
-        Metadata metadata = findByPathIfOwner(request.getUsername(), request.getPath() + request.getFileName());
-        metadataRepository.deleteById(metadata.get_id());
-        return metadataRepository.existsByPathWithFile(file.toString());
+        String pathWithFile = request.getPath() + request.getFileName();
+        findByPathIfOwner(request.getUsername(), pathWithFile);
+        metadataRepository.deleteByPathWithFile(pathWithFile);
+        return metadataRepository.existsByPathWithFile(pathWithFile);
     }
 
     public Metadata findByPathIfOwner(String username, String pathWithFile) throws IOException {

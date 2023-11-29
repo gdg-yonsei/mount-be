@@ -26,8 +26,7 @@ public class Directory extends TimestampEntity {
     }
 
     public void renameDirectory(String newDirectoryName) {
-        String pathExcludingDirectory = this.pathIncludingDirectory.substring(0, this.pathIncludingDirectory.lastIndexOf("/"));
-        this.pathIncludingDirectory = pathExcludingDirectory + "/" + newDirectoryName;
+        this.pathIncludingDirectory = newDirectoryName;
     }
 
 }

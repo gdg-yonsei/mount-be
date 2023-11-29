@@ -62,7 +62,7 @@ public class FileControllerTest {
                 MockMvcRequestBuilders.multipart("/api/file/upload")
                         .file(multipartFile1)
                         .param("username", "becooq81")
-                        .param("path", "/hi/")
+                        .param("path", "/")
         ).andExpect(status().is2xxSuccessful());
     }
 
@@ -105,10 +105,10 @@ public class FileControllerTest {
         RequestBuilder requestBuilder = MockMvcRequestBuilders.delete("/api/file/delete")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(asJsonString(fileDeleteRequest));
-
-        Assertions.assertFalse(metadataRepository.existsByPathWithFile(fileDeleteRequest.getPath()));
         ResultActions resultActions = mockMvc.perform(requestBuilder);
         resultActions.andExpect(status().is2xxSuccessful());
+        Assertions.assertFalse(metadataRepository.existsByPathWithFile(fileDeleteRequest.getPath() + fileDeleteRequest.getFileName()));
+
     }
 
     private FileDeleteRequest deleteFileRequest() {

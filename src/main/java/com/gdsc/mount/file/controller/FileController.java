@@ -1,9 +1,11 @@
 package com.gdsc.mount.file.controller;
 
-import com.gdsc.mount.file.service.FileService;
-import com.gdsc.mount.metadata.dto.MetadataCreateRequest;
+import com.gdsc.mount.directory.dto.DirectoryCreateRequest;
+import com.gdsc.mount.directory.service.DirectoryService;
 import com.gdsc.mount.file.dto.FileDeleteRequest;
 import com.gdsc.mount.file.dto.FileDownloadRequest;
+import com.gdsc.mount.file.service.FileService;
+import com.gdsc.mount.metadata.dto.MetadataCreateRequest;
 import com.gdsc.mount.metadata.service.MetadataService;
 import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class FileController {
     private final MetadataService metadataService;
     private final FileService fileService;
+    private final DirectoryService directoryService;
 
     @PostMapping("/upload")
     public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file,
@@ -33,6 +36,7 @@ public class FileController {
                                              @RequestParam("path") String path) throws Exception {
         String fileName = StringUtils.cleanPath(file.getName());
         MetadataCreateRequest request = new MetadataCreateRequest(fileName, username, path);
+        directoryService.createDirectory(new DirectoryCreateRequest(path, username));
         String fileCode = fileService.uploadFile(file, request.getPath());
         metadataService.createMetadata(request, file, fileCode);
         return ResponseEntity.status(200).body(fileCode);

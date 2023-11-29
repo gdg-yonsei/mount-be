@@ -16,6 +16,8 @@ public class MetadataCreateRequest {
     @NotBlank
     private String username;
 
+    // TODO: add validation that it ends and starts with "/"
+    // TODO: add validation that it should have no cosecutive // in it
     @NotNull
     private String path;
 

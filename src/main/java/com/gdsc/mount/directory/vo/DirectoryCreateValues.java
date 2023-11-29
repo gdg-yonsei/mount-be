@@ -1,11 +1,11 @@
-package com.gdsc.mount.directory.dto;
+package com.gdsc.mount.directory.vo;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class DirectoryCreateRequest {
-    private String path;
+public class DirectoryCreateValues {
     private String username;
+    private String pathWithDirectory;
 }

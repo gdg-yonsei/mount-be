@@ -1,7 +1,10 @@
 package com.gdsc.mount.metadata.domain;
 
+import static com.gdsc.mount.directory.service.DirectoryService.nthLastIndexOf;
+
 import com.gdsc.mount.common.domain.TimestampEntity;
-import com.gdsc.mount.metadata.vo.CreateMetadataValues;
+import com.gdsc.mount.directory.vo.DirectoryCreateValues;
+import com.gdsc.mount.metadata.vo.MetadataCreateValues;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import lombok.Getter;
@@ -9,7 +12,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-import org.springframework.web.multipart.MultipartFile;
 
 @Document(collection = "metadata")
 @Getter
@@ -23,7 +25,13 @@ public class Metadata extends TimestampEntity {
 
     @NotNull
     @Field(name = "path_with_file")
+    @Indexed(unique = true)
     private String pathWithFile;
+
+    @NotNull
+    @Field(name = "path_without_file")
+    @Indexed(unique = true)
+    private String pathWithoutFile;
 
     @NotNull
     @Field(name = "username")
@@ -38,22 +46,26 @@ public class Metadata extends TimestampEntity {
 
     protected Metadata() {}
 
-    public Metadata(String _id, String name, String pathWithFile, String username, MultipartFile file) {
-        this._id = _id;
-        this.username = username;
-        this.contentType = file.getContentType();
-        this.sizeInBytes = file.getSize();
-        this.name = name;
-        this.pathWithFile = pathWithFile;
-    }
-
-    public Metadata(CreateMetadataValues values) {
+    public Metadata(MetadataCreateValues values) {
         this._id = values.getFileCode();
         this.username = values.getUsername();
         this.contentType = values.getFile().getContentType();
         this.sizeInBytes = values.getFile().getSize();
         this.name = values.getName();
         this.pathWithFile = values.getPath() + values.getName();
+        this.pathWithoutFile = values.getPath();
+    }
+
+    public Metadata(DirectoryCreateValues values) {
+        this.username = values.getUsername();
+        this.pathWithFile = values.getPathWithDirectory();
+        int idx = nthLastIndexOf(2, "/", values.getPathWithDirectory());
+        this.pathWithoutFile = values.getPathWithDirectory().substring(0, idx+1);
+    }
+
+    public void renameDirectory(String newPathIncludingDirectory, String pathWithoutFile) {
+        this.pathWithFile = newPathIncludingDirectory;
+        this.pathWithoutFile = pathWithoutFile;
     }
 
 

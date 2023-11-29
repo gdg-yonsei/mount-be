@@ -1,5 +1,6 @@
 package com.gdsc.mount.file.service;
 
+import com.gdsc.mount.directory.service.DirectoryService;
 import com.gdsc.mount.metadata.domain.Metadata;
 import com.gdsc.mount.file.dto.FileDeleteRequest;
 import com.gdsc.mount.file.dto.FileDownloadRequest;
@@ -24,14 +25,10 @@ public class FileService {
     private static final String ROOT = "Files-Upload";
 
     private final MetadataService metadataService;
+    private final DirectoryService directoryService;
 
     public String uploadFile(MultipartFile file, String path) throws Exception {
         Path uploadPath = Paths.get(ROOT+path);
-
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
-        }
-
         String fileCode = RandomStringUtils.randomAlphanumeric(10) + "-" + file.getOriginalFilename();
         Path filePath = uploadPath.resolve(fileCode);
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
