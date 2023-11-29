@@ -8,6 +8,7 @@ gradlew
 gradlew.bat
 settings.gradle
 .DS_Store
+Files-Upload/**
 
 ### STS ###
 .apt_generated
