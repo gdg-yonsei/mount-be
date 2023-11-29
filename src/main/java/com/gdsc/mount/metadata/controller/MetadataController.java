@@ -16,14 +16,12 @@ import java.util.List;
 public class MetadataController {
     private final MetadataService metadataService;
 
-    // get file
     @GetMapping("/{fileId}")
     public ResponseEntity<MetadataResponse> findFileById(@PathVariable String fileId) {
         MetadataResponse response = MetadataResponse.of(metadataService.getMetadatabyId(fileId));
         return ResponseEntity.status(200).body(response);
     }
 
-    // get all
     @GetMapping("/all")
     public ResponseEntity<List<MetadataResponse>> findFilesByPage(@RequestParam int page, @RequestParam int size) {
         return ResponseEntity.status(200).body(metadataService.getAllByPage(page, size));

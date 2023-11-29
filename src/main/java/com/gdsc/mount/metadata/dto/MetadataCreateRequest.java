@@ -1,8 +1,8 @@
 package com.gdsc.mount.metadata.dto;
 
-import com.gdsc.mount.validation.NodeNameValidation;
+import com.gdsc.mount.validation.annotation.ValidName;
+import com.gdsc.mount.validation.annotation.ValidPath;
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -10,15 +10,16 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class MetadataCreateRequest {
-    @NodeNameValidation
+    @ValidName
+    @NotBlank
     private String name;
 
     @NotBlank
+    @ValidName
     private String username;
 
-    // TODO: add validation that it ends and starts with "/"
-    // TODO: add validation that it should have no cosecutive // in it
-    @NotNull
+    @NotBlank
+    @ValidPath
     private String path;
 
     protected MetadataCreateRequest() {}

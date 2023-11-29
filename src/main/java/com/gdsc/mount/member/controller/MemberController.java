@@ -14,21 +14,17 @@ import org.springframework.web.bind.annotation.*;
 public class MemberController {
     private final MemberService memberService;
 
-
-    // get member
     @GetMapping("/{memberId}")
     public ResponseEntity<MemberResponse> getMemberById(@PathVariable String memberId) {
         return ResponseEntity.ok().body(memberService.findMemberById(memberId));
     }
 
-    // create member
     @PostMapping("/new")
     public ResponseEntity<MemberResponse> registerMember(@RequestBody MemberCreateRequest request) {
         MemberResponse response = memberService.createMember(request.getUsername());
         return ResponseEntity.status(201).body(response);
     }
 
-    // delete member
     @DeleteMapping("/{memberId}")
     public ResponseEntity<String> deleteMember(@PathVariable String memberId) {
         memberService.deleteMemberById(memberId);

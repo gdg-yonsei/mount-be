@@ -42,7 +42,6 @@ public class DirectoryService {
         return metadata.toList();
     }
 
-    // create
     public String createDirectory(DirectoryCreateRequest request) throws IOException {
         if (!metadataRepository.existsByPathWithFile(request.getPath())) {
             Path path = Paths.get(ROOT + request.getPath());
@@ -60,7 +59,6 @@ public class DirectoryService {
         return directoryPath;
     }
 
-    // rename
     public String updateDirectoryName(DirectoryUpdateRequest request) throws IOException {
         checkOwner(request.getUsername(), request.getPathIncludingDirectory());
         int idx = nthLastIndexOf(2, "/", request.getPathIncludingDirectory());
@@ -81,7 +79,6 @@ public class DirectoryService {
         return newPathIncludingDirectory;
     }
 
-    // delete
     public void deleteDirectory(String path) throws IOException {
         Path directoryPath = Paths.get(path);
         Files.walkFileTree(directoryPath, new SimpleFileVisitor<>() {
@@ -101,17 +98,15 @@ public class DirectoryService {
         });
     }
 
-    // move
+    public static int nthLastIndexOf(int nth, String ch, String string) {
+        if (nth <= 0) return string.length();
+        return nthLastIndexOf(--nth, ch, string.substring(0, string.lastIndexOf(ch)));
+    }
 
     private void checkOwner(String username, String path) {
         Metadata metadata = findDirectoryByPathIncludingDirectory(path);
         if (!username.equals(metadata.getUsername())) {
             throw new IllegalArgumentException("You are not the owner of this directory");
         }
-    }
-
-    public static int nthLastIndexOf(int nth, String ch, String string) {
-        if (nth <= 0) return string.length();
-        return nthLastIndexOf(--nth, ch, string.substring(0, string.lastIndexOf(ch)));
     }
 }

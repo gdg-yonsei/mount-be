@@ -5,8 +5,9 @@ import static com.gdsc.mount.directory.service.DirectoryService.nthLastIndexOf;
 import com.gdsc.mount.common.domain.TimestampEntity;
 import com.gdsc.mount.directory.vo.DirectoryCreateValues;
 import com.gdsc.mount.metadata.vo.MetadataCreateValues;
+import com.gdsc.mount.validation.annotation.ValidName;
+import com.gdsc.mount.validation.annotation.ValidPath;
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -21,21 +22,25 @@ public class Metadata extends TimestampEntity {
 
     @NotBlank
     @Field(name = "name")
+    @ValidName
     private String name;
 
-    @NotNull
+    @NotBlank
     @Field(name = "path_with_file")
     @Indexed(unique = true)
+    @ValidPath
     private String pathWithFile;
 
-    @NotNull
+    @NotBlank
     @Field(name = "path_without_file")
-    @Indexed(unique = true)
+    @Indexed
+    @ValidPath
     private String pathWithoutFile;
 
-    @NotNull
+    @NotBlank
     @Field(name = "username")
     @Indexed(unique = true)
+    @ValidName
     private String username;
 
     @Field(name = "content_type")

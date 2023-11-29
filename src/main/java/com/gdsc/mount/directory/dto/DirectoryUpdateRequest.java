@@ -1,16 +1,23 @@
 package com.gdsc.mount.directory.dto;
 
+import com.gdsc.mount.validation.annotation.ValidName;
+import com.gdsc.mount.validation.annotation.ValidPath;
+import javax.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
+@AllArgsConstructor
 public class DirectoryUpdateRequest {
-    private String pathIncludingDirectory;
-    private String newDirectoryName;
-    private String username;
+    @ValidPath
+    @NotBlank
+    private final String pathIncludingDirectory;
 
-    public DirectoryUpdateRequest(String pathIncludingDirectory, String newDirectoryName, String username) {
-        this.pathIncludingDirectory = pathIncludingDirectory;
-        this.newDirectoryName = newDirectoryName;
-        this.username = username;
-    }
+    @ValidName
+    @NotBlank
+    private final String newDirectoryName;
+
+    @ValidName
+    @NotBlank
+    private final String username;
 }

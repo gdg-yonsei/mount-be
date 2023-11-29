@@ -53,7 +53,6 @@ public class FileControllerTest {
         memberRepository.save(new Member(username));
     }
 
-    // 파일 업로드
     @Test
     @DisplayName("파일 업로드")
     public void upload_file() throws Exception {
@@ -66,7 +65,6 @@ public class FileControllerTest {
         ).andExpect(status().is2xxSuccessful());
     }
 
-    // 파일 다운로드
     @Test
     @DisplayName("파일 다운로드")
     public void download_file() throws Exception {
@@ -88,7 +86,6 @@ public class FileControllerTest {
         resultActions.andExpect(status().isOk());
     }
 
-    // delete file test
     @Test
     @DisplayName("파일 삭제")
     public void delete_file() throws Exception {
@@ -97,7 +94,7 @@ public class FileControllerTest {
                 MockMvcRequestBuilders.multipart("/api/file/upload")
                         .file(multipartFile1)
                         .param("username", "becooq81")
-                        .param("path", "/hello/")
+                        .param("path", "/")
         ).andExpect(status().is2xxSuccessful());
 
         FileDeleteRequest fileDeleteRequest = deleteFileRequest();
@@ -114,7 +111,7 @@ public class FileControllerTest {
     private FileDeleteRequest deleteFileRequest() {
         return new FileDeleteRequest(
                 "becooq81",
-                "/hello/",
+                "/",
                 "file2"
         );
     }
