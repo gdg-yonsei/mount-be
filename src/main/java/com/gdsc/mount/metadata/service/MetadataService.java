@@ -49,13 +49,13 @@ public class MetadataService {
 
     public boolean deleteFile(DeleteFileRequest request, String filePath) throws IOException {
         Path file = Path.of(filePath);
-        Metadata metadata = findByPathIfOwner(request.getUsername(),file.toString());
+        Metadata metadata = findByPathIfOwner(request.getUsername(), request.getPath() + request.getFileName());
         metadataRepository.deleteById(metadata.get_id());
-        return metadataRepository.existsByPath(file.toString());
+        return metadataRepository.existsByPathWithFile(file.toString());
     }
 
-    public Metadata findByPathIfOwner(String username, String path) throws IOException {
-        Metadata metadata = findByPath(path);
+    public Metadata findByPathIfOwner(String username, String pathWithFile) throws IOException {
+        Metadata metadata = findByPath(pathWithFile);
         checkFileOwner(username, metadata);
         return metadata;
     }
@@ -65,7 +65,7 @@ public class MetadataService {
     }
 
     private Metadata findByPath(String path) {
-        return metadataRepository.findByPath(path)
+        return metadataRepository.findByPathWithFile(path)
                 .orElseThrow(() -> new NoSuchElementException("No metadata found with given path."));
     }
 

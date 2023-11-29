@@ -67,7 +67,7 @@ public class FileControllerTest {
                 MockMvcRequestBuilders.multipart("/api/file/upload")
                         .file(multipartFile1)
                         .param("username", "becooq81")
-                        .param("path", "/file")
+                        .param("path", "/hi/")
                         .param("atRoot", "false")
         ).andExpect(status().is2xxSuccessful());
     }
@@ -81,7 +81,7 @@ public class FileControllerTest {
                 MockMvcRequestBuilders.multipart("/api/file/upload")
                         .file(multipartFile1)
                         .param("username", "becooq81")
-                        .param("path", "Files-Upload")
+                        .param("path", "/hello/")
                         .param("atRoot", "false")
         ).andExpect(status().is2xxSuccessful());
 
@@ -104,7 +104,7 @@ public class FileControllerTest {
                 MockMvcRequestBuilders.multipart("/api/file/upload")
                         .file(multipartFile1)
                         .param("username", "becooq81")
-                        .param("path", "Files-Upload")
+                        .param("path", "/hello/")
                         .param("atRoot", "false")
         ).andExpect(status().is2xxSuccessful());
 
@@ -114,7 +114,7 @@ public class FileControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(asJsonString(deleteFileRequest));
 
-        Assertions.assertFalse(metadataRepository.existsByPath(deleteFileRequest.getPath()));
+        Assertions.assertFalse(metadataRepository.existsByPathWithFile(deleteFileRequest.getPath()));
         ResultActions resultActions = mockMvc.perform(requestBuilder);
         resultActions.andExpect(status().is2xxSuccessful());
     }
@@ -122,7 +122,7 @@ public class FileControllerTest {
     private DeleteFileRequest deleteFileRequest() {
         return new DeleteFileRequest(
                 "becooq81",
-                "file2",
+                "/hello/",
                 "file2"
         );
     }
@@ -130,11 +130,10 @@ public class FileControllerTest {
     private DownloadFileRequest downloadFileRequest() {
         return new DownloadFileRequest(
                 "becooq81",
-                "file3",
+                "/hello/",
                 "file3"
         );
     }
-
 
     private static String asJsonString(final Object obj) {
         try {

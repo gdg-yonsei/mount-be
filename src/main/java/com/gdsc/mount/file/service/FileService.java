@@ -1,6 +1,7 @@
 package com.gdsc.mount.file.service;
 
 import com.gdsc.mount.metadata.domain.Metadata;
+import com.gdsc.mount.metadata.dto.DeleteFileRequest;
 import com.gdsc.mount.metadata.dto.DownloadFileRequest;
 import com.gdsc.mount.metadata.service.MetadataService;
 import java.io.IOException;
@@ -20,36 +21,37 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class FileService {
 
-    private static final Path root = Paths.get("Files-Upload");
+    private static final String ROOT = "Files-Upload";
 
     private final MetadataService metadataService;
 
-    public String uploadFile(MultipartFile file) throws Exception {
-        if (!Files.exists(root)) {
-            Files.createDirectories(root);
+    public String uploadFile(MultipartFile file, String path) throws Exception {
+        Path uploadPath = Paths.get(ROOT+path);
+
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
         }
 
         String fileCode = RandomStringUtils.randomAlphanumeric(10) + "-" + file.getOriginalFilename();
-
-        Path filePath = root.resolve(file.getOriginalFilename());
-
+        Path filePath = uploadPath.resolve(fileCode);
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
         return fileCode;
     }
 
     public Resource downloadFile(DownloadFileRequest request) throws IOException {
-        String path = root+"/"+request.getPath();
-        Metadata metadata = metadataService.findByPathIfOwner(request.getUsername(), path);
-        Path foundFile = Paths.get(path);
+        Metadata metadata = metadataService.findByPathIfOwner(request.getUsername(), request.getPath()+request.getFileName());
+        Path foundFile = Paths.get(ROOT+request.getPath());
 
         return new UrlResource(foundFile.toUri());
     }
 
-    public String deleteFile(String path) throws IOException, NoSuchFileException {
-        Path filePath = root.resolve(path);
-        boolean success = Files.deleteIfExists(filePath);
+    public String deleteFile(DeleteFileRequest request) throws IOException, NoSuchFileException {
+        Path filePath = Paths.get(ROOT + request.getPath());
+        Metadata metadata = metadataService.findByPathIfOwner(request.getUsername(), request.getPath() + request.getFileName());
+        Path file = filePath.resolve(metadata.get_id());
+        boolean success = Files.deleteIfExists(file);
         if (!success) {
-            throw new NoSuchFileException("No such file with given path.");
+            throw new NoSuchFileException("No such file with given path in file storage.");
         }
         return filePath.toString();
     }

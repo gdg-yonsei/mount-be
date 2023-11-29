@@ -34,7 +34,7 @@ public class FileController {
                                              @RequestParam("atRoot") boolean atRoot) throws Exception {
         String fileName = StringUtils.cleanPath(file.getName());
         CreateMetadataRequest request = new CreateMetadataRequest(fileName, username, path, atRoot);
-        String fileCode = fileService.uploadFile(file);
+        String fileCode = fileService.uploadFile(file, request.getPath());
         metadataService.createMetadata(request, file, fileCode);
         return ResponseEntity.status(200).body(fileCode);
     }
@@ -56,7 +56,7 @@ public class FileController {
 
     @DeleteMapping("/delete")
     public ResponseEntity<String> deleteFile(@RequestBody @Valid DeleteFileRequest request) throws Exception{
-        String filePath = fileService.deleteFile(request.getPath());
+        String filePath = fileService.deleteFile(request);
         boolean success = metadataService.deleteFile(request, filePath);
         String body = success ? "success" : "fail";
         return ResponseEntity.status(204).body(body);

@@ -16,7 +16,7 @@ public class CreateMetadataValues {
     public CreateMetadataValues(CreateMetadataRequest request, MultipartFile file, String fileCode) {
         this.fileCode = fileCode;
         this.name = file.getOriginalFilename();
-        this.path = request.getPath() + "/" + name;
+        this.path = request.getPath();
         this.atRoot = request.isAtRoot();
         this.username = request.getUsername();
         this.file = file;

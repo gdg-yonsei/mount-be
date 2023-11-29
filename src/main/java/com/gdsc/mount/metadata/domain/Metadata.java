@@ -22,8 +22,8 @@ public class Metadata extends TimestampEntity {
     private String name;
 
     @NotNull
-    @Field(name = "path")
-    private String path;
+    @Field(name = "path_with_file")
+    private String pathWithFile;
 
     @NotNull
     @Field(name = "at_root")
@@ -42,13 +42,13 @@ public class Metadata extends TimestampEntity {
 
     protected Metadata() {}
 
-    public Metadata(String _id, String name, String path, boolean atRoot, String username, MultipartFile file) {
+    public Metadata(String _id, String name, String pathWithFile, boolean atRoot, String username, MultipartFile file) {
         this._id = _id;
         this.username = username;
         this.contentType = file.getContentType();
         this.sizeInBytes = file.getSize();
         this.name = name;
-        this.path = path;
+        this.pathWithFile = pathWithFile;
         this.atRoot = atRoot;
     }
 
@@ -58,7 +58,7 @@ public class Metadata extends TimestampEntity {
         this.contentType = values.getFile().getContentType();
         this.sizeInBytes = values.getFile().getSize();
         this.name = values.getName();
-        this.path = values.getPath();
+        this.pathWithFile = values.getPath() + values.getName();
         this.atRoot = values.isAtRoot();
     }
 
