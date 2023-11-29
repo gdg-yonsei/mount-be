@@ -5,9 +5,11 @@ import com.gdsc.mount.member.domain.Member;
 import com.gdsc.mount.member.repository.MemberRepository;
 import com.gdsc.mount.metadata.dto.CreateMetadataRequest;
 import com.gdsc.mount.metadata.dto.DeleteFileRequest;
+import com.gdsc.mount.metadata.dto.DownloadFileRequest;
 import com.gdsc.mount.metadata.repository.MetadataRepository;
 import com.gdsc.mount.metadata.service.MetadataService;
 import java.nio.charset.StandardCharsets;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -76,41 +78,65 @@ public class FileControllerTest {
     @Test
     @DisplayName("파일 다운로드")
     public void download_file() throws Exception {
-        MockMultipartFile multipartFile1 = new MockMultipartFile("file", "file", "text/plain", "test file".getBytes(StandardCharsets.UTF_8));
+        MockMultipartFile multipartFile1 = new MockMultipartFile("file", "file3", "text/plain", "test file".getBytes(StandardCharsets.UTF_8));
         mockMvc.perform(
                 MockMvcRequestBuilders.multipart("/api/file/upload")
                         .file(multipartFile1)
                         .param("username", "becooq81")
-                        .param("path", "Files-upload")
+                        .param("path", "Files-Upload")
                         .param("atRoot", "false")
         ).andExpect(status().is2xxSuccessful());
 
-        DeleteFileRequest deleteFileRequest = deleteFileRequest();
+        DownloadFileRequest downloadFileRequest = downloadFileRequest();
 
         RequestBuilder requestBuilder = MockMvcRequestBuilders.get("/api/file/download")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(asJsonString(deleteFileRequest));
+                .content(asJsonString(downloadFileRequest));
 
         ResultActions resultActions = mockMvc.perform(requestBuilder);
         resultActions.andExpect(status().isOk());
     }
 
+    // delete file test
+    @Test
+    @DisplayName("파일 삭제")
+    public void delete_file() throws Exception {
+        MockMultipartFile multipartFile1 = new MockMultipartFile("file", "file2", "text/plain", "test file".getBytes(StandardCharsets.UTF_8));
+        mockMvc.perform(
+                MockMvcRequestBuilders.multipart("/api/file/upload")
+                        .file(multipartFile1)
+                        .param("username", "becooq81")
+                        .param("path", "Files-Upload")
+                        .param("atRoot", "false")
+        ).andExpect(status().is2xxSuccessful());
+
+        DeleteFileRequest deleteFileRequest = deleteFileRequest();
+
+        RequestBuilder requestBuilder = MockMvcRequestBuilders.delete("/api/file/delete")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(deleteFileRequest));
+
+        Assertions.assertFalse(metadataRepository.existsByPath(deleteFileRequest.getPath()));
+        ResultActions resultActions = mockMvc.perform(requestBuilder);
+        resultActions.andExpect(status().is2xxSuccessful());
+    }
+
     private DeleteFileRequest deleteFileRequest() {
         return new DeleteFileRequest(
                 "becooq81",
-                "Files-upload/file",
-                "file"
+                "file2",
+                "file2"
         );
     }
 
-    private CreateMetadataRequest createMetadataRequest() {
-        return new CreateMetadataRequest(
-                "file",
+    private DownloadFileRequest downloadFileRequest() {
+        return new DownloadFileRequest(
                 "becooq81",
-                "/file",
-                true
+                "file3",
+                "file3"
         );
     }
+
 
     private static String asJsonString(final Object obj) {
         try {

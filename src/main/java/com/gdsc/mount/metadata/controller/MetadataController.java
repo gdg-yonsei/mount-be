@@ -31,13 +31,4 @@ public class MetadataController {
         return ResponseEntity.status(200).body(metadataService.getAllByPage(page, size));
     }
 
-    // delete file
-    @DeleteMapping("/{fileId}")
-    public ResponseEntity<String> deleteFile(@PathVariable String fileId,
-                                             @RequestBody @Valid DeleteFileRequest request) throws Exception{
-        boolean success = metadataService.deleteFile(request);
-        String body = success ? "success" : "fail";
-        return ResponseEntity.status(204).body(body);
-    }
-
 }

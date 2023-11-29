@@ -2,6 +2,7 @@ package com.gdsc.mount.file.controller;
 
 import com.gdsc.mount.file.service.FileService;
 import com.gdsc.mount.metadata.dto.CreateMetadataRequest;
+import com.gdsc.mount.metadata.dto.DeleteFileRequest;
 import com.gdsc.mount.metadata.dto.DownloadFileRequest;
 import com.gdsc.mount.metadata.service.MetadataService;
 import javax.validation.Valid;
@@ -11,7 +12,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -50,5 +53,13 @@ public class FileController {
         }
 
         return ResponseEntity.ok().body(resource);
+    }
+
+    @DeleteMapping("/delete")
+    public ResponseEntity<String> deleteFile(@RequestBody @Valid DeleteFileRequest request) throws Exception{
+        String filePath = fileService.deleteFile(request.getPath());
+        boolean success = metadataService.deleteFile(request, filePath);
+        String body = success ? "success" : "fail";
+        return ResponseEntity.status(204).body(body);
     }
 }

@@ -35,7 +35,7 @@ public class GlobalExceptionHandler {
     ) {
         ErrorResponse response = ErrorResponse.of(
                 exception,
-                "No such element exists.",
+                exception.getMessage(),
                 HttpStatus.NOT_FOUND,
                 request
         );
@@ -69,6 +69,7 @@ public class GlobalExceptionHandler {
                 exception.getMessage(),
                 HttpStatus.BAD_REQUEST,
                 request);
+        exception.getStackTrace();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 }
